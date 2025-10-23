@@ -6,37 +6,54 @@ Detailed documentation for all custom components in the portfolio.
 
 ## Core Interactive Components
 
-### HeroCanvas
+### HeroCanvas (Unified Hero Section)
 
 **Path**: `src/app/(components)/HeroCanvas.tsx`
 
-**Purpose**: Renders the interactive 3D 'I' logo with cursor-reactive lighting.
+**Purpose**: Unified hero section combining 3D 'I' logo with narrative text sequences in a pinned scroll experience.
+
+**Props**:
+
+- `lines: string[]` - Array of narrative text lines to animate
 
 **Features**:
-- WebGL-based 3D text using React Three Fiber
-- Point light that follows cursor position
-- Hover glow effect with emissive materials
-- Automatic CSS fallback for unsupported devices
-- Respects reduced motion preferences
 
-**Props**: None (self-contained)
+- **Pinned Scroll**: Entire section stays fixed while content animates
+- **3D 'I' Logo**: WebGL-based with cursor-reactive point light
+- **Coordinated Movement**: 'I' smoothly moves left (25%) as texts appear on right
+- **Progressive Text Reveal**: Sequential fade in/out of narrative lines
+- **48FPS Optimized**: GSAP ScrollTrigger with optimized scrub values
+- **Split Layout**: 'I' on left half, texts on right half
+- **Seamless Transition**: Unpins after final text to allow normal scroll
+- **Accessibility**: Fallback to static layout with reduced motion
 
 **Dependencies**:
+
 - `@react-three/fiber` - React renderer for Three.js
 - `@react-three/drei` - Helper components (Text3D, Center, Environment)
 - `three` - 3D library
+- `gsap` - Animation library with ScrollTrigger
 
-**Implementation Notes**:
+**Implementation**:
+
 ```typescript
-// Cursor position normalized to 3D space
-const x = (position.x / window.innerWidth) * 4 - 2
-const y = -(position.y / window.innerHeight) * 4 + 2
+<HeroCanvas lines={['Create experiences', 'Tell stories', "I'm Athul Nath"]} />
 ```
 
-**Fallback Mode**:
-- Triggers on WebGL error or reduced motion
-- Uses CSS text with `text-shadow` for glow effect
-- Maintains hover interaction
+**Animation Timeline**:
+
+1. Hero section pins
+2. 'I' moves left (coordinated with scroll progress)
+3. Each text line fades in → holds → fades out
+4. Last line stays visible
+5. Section unpins, page scrolls normally
+
+**Performance**:
+
+- Uses ScrollTrigger `onUpdate` callback for 'I' position
+- RAF-based smooth interpolation in Three.js
+- Optimized scrub value (0.5) for responsive feel
+- Total duration: `lines.length × 100%` scroll distance
 
 ---
 
@@ -47,6 +64,7 @@ const y = -(position.y / window.innerHeight) * 4 + 2
 **Purpose**: Creates a cursor-following spotlight effect across the page.
 
 **Features**:
+
 - Smooth cursor tracking using lerp interpolation
 - Fixed position overlay (z-index: 50)
 - Mix-blend-mode for lighting effect
@@ -55,51 +73,16 @@ const y = -(position.y / window.innerHeight) * 4 + 2
 **Props**: None
 
 **Customization**:
+
 ```typescript
 // Adjust smoothing factor in useLightPointer hook
 const position = useLightPointer(0.12) // Lower = slower, smoother
 ```
 
 **Performance**:
+
 - Uses `requestAnimationFrame` for 60fps updates
 - Cleanup on unmount prevents memory leaks
-
----
-
-### PinnedScroller
-
-**Path**: `src/app/(components)/PinnedScroller.tsx`
-
-**Purpose**: Creates scroll-pinned narrative sequences with fade transitions.
-
-**Props**:
-- `lines: string[]` - Array of text lines to animate
-
-**Features**:
-- GSAP ScrollTrigger pinning
-- Sequential fade in/out transitions
-- Configurable pin duration via ScrollTrigger end
-- Fallback to static stacked layout with reduced motion
-
-**Configuration**:
-```typescript
-// In src/lib/gsap.ts
-scrollTrigger: {
-  trigger: containerRef,
-  start: 'top top',
-  end: '+=300%', // Adjust for longer/shorter pin duration
-  pin: true,
-  scrub: 1,
-}
-```
-
-**Timing**:
-Each line has 3 phases:
-1. Fade in (1s)
-2. Hold (0.5s)
-3. Fade out (1s)
-
-Total: 2.5s per line × number of lines
 
 ---
 
@@ -110,20 +93,20 @@ Total: 2.5s per line × number of lines
 **Purpose**: Animates text with word-by-word stagger effect.
 
 **Props**:
+
 - `text: string` - Text to animate
 - `delay?: number` - Delay before animation starts (default: 0)
 
 **Features**:
+
 - Splits text into words
 - Framer Motion stagger animation
 - Respects reduced motion (instant display)
 
 **Usage**:
+
 ```tsx
-<CopyBeats
-  text="Your animated text here"
-  delay={0.5}
-/>
+<CopyBeats text="Your animated text here" delay={0.5} />
 ```
 
 ---
@@ -137,12 +120,14 @@ Total: 2.5s per line × number of lines
 **Purpose**: Displays filterable technology stack.
 
 **Features**:
+
 - Category filtering (All, Frontend, 3D, Streaming, Tooling)
 - Animated layout transitions
 - Hover effects with gradient overlay
 - Card shine effect on hover
 
 **Data Structure**:
+
 ```typescript
 const technologies: TechItem[] = [
   { name: 'React', category: 'frontend' },
@@ -151,6 +136,7 @@ const technologies: TechItem[] = [
 ```
 
 **Customization**:
+
 1. Add/remove technologies in the `technologies` array
 2. Add new categories in the `categories` array
 3. Adjust grid columns in className: `grid-cols-2 md:grid-cols-3 lg:grid-cols-4`
@@ -164,10 +150,12 @@ const technologies: TechItem[] = [
 **Purpose**: Project card with hover animations.
 
 **Props**:
+
 - `project: WorkProject` - Project data
 - `index: number` - Card index for stagger animation
 
 **Features**:
+
 - Scroll-triggered reveal animation
 - Hover state with border color change
 - Light sheen effect on hover
@@ -184,6 +172,7 @@ const technologies: TechItem[] = [
 **Purpose**: Contact form with animated inputs.
 
 **Features**:
+
 - Form validation (HTML5 required fields)
 - Loading states
 - Success/error feedback
@@ -191,6 +180,7 @@ const technologies: TechItem[] = [
 
 **Integration**:
 Replace mock submission with real API:
+
 ```typescript
 const handleSubmit = async (e: FormEvent) => {
   e.preventDefault()
@@ -210,6 +200,7 @@ const handleSubmit = async (e: FormEvent) => {
 **Purpose**: Floating resume download button.
 
 **Features**:
+
 - Fixed position (bottom-right)
 - Hover scale animation
 - Download icon with bounce effect
@@ -217,6 +208,7 @@ const handleSubmit = async (e: FormEvent) => {
 
 **Configuration**:
 Update download path in `src/lib/utils.ts`:
+
 ```typescript
 export function downloadResume() {
   const resumeUrl = '/resume-athul-nath.pdf'
@@ -235,12 +227,14 @@ export function downloadResume() {
 **Purpose**: Sticky navigation with auto-hide on scroll down.
 
 **Features**:
+
 - Glass morphism background
 - Scroll direction detection
 - Smooth show/hide animation
 - Hash link navigation
 
 **Behavior**:
+
 - Always visible at top (scrollY < 100px)
 - Hides when scrolling down
 - Shows when scrolling up
@@ -254,12 +248,14 @@ export function downloadResume() {
 **Purpose**: Accessibility control for animations.
 
 **Features**:
+
 - Toggles reduced motion state
 - Updates HTML class for CSS targeting
 - Visual feedback with icon change
 - Persists across page navigation
 
 **Implementation**:
+
 ```typescript
 // Components check this hook
 const { reduceMotion } = useMotionSettings()
@@ -282,9 +278,11 @@ if (reduceMotion) {
 **Returns**: `{ x: number, y: number }`
 
 **Parameters**:
+
 - `smoothFactor?: number` - Lerp interpolation factor (default: 0.15)
 
 **Usage**:
+
 ```typescript
 const position = useLightPointer(0.12)
 // position.x, position.y update 60fps
@@ -299,6 +297,7 @@ const position = useLightPointer(0.12)
 **Purpose**: Manages motion preferences.
 
 **Returns**:
+
 ```typescript
 {
   reduceMotion: boolean
@@ -307,6 +306,7 @@ const position = useLightPointer(0.12)
 ```
 
 **Features**:
+
 - Reads system `prefers-reduced-motion`
 - Allows manual override
 - Applies `.reduce-motion` class to `<html>`
@@ -322,15 +322,19 @@ const position = useLightPointer(0.12)
 **Functions**:
 
 #### `initSmoothScroll(lenisInstance)`
+
 Syncs Lenis with GSAP ScrollTrigger.
 
 #### `createPinnedSequence(container, lines, reduceMotion)`
+
 Creates scroll-pinned timeline for narrative lines.
 
 #### `parallaxElement(element, speed, start, end)`
+
 Applies parallax effect to element.
 
 #### `fadeInOnScroll(elements, stagger)`
+
 Fade-in animation on scroll into view.
 
 ---
@@ -342,21 +346,27 @@ Fade-in animation on scroll into view.
 **Functions**:
 
 #### `cn(...inputs)`
+
 Merge Tailwind classes with clsx.
 
 #### `prefersReducedMotion()`
+
 Check system motion preference.
 
 #### `lerp(start, end, factor)`
+
 Linear interpolation for smooth animations.
 
 #### `mapRange(value, inMin, inMax, outMin, outMax)`
+
 Map value from one range to another.
 
 #### `clamp(value, min, max)`
+
 Constrain value between min and max.
 
 #### `downloadResume()`
+
 Trigger resume download.
 
 ---
@@ -370,17 +380,17 @@ Trigger resume download.
 ```typescript
 interface WorkProject {
   id: string
-  slug: string              // URL slug
-  title: string             // Project name
-  subtitle: string          // Short description
-  category: string          // Project type
-  thumbnail: string         // Image path
-  year: string              // Year completed
-  tags: string[]            // Technologies used
-  challenge: string         // Problem statement
-  approach: string          // Solution approach
-  outcome: string           // Results achieved
-  link?: string             // Live project URL (optional)
+  slug: string // URL slug
+  title: string // Project name
+  subtitle: string // Short description
+  category: string // Project type
+  thumbnail: string // Image path
+  year: string // Year completed
+  tags: string[] // Technologies used
+  challenge: string // Problem statement
+  approach: string // Solution approach
+  outcome: string // Results achieved
+  link?: string // Live project URL (optional)
 }
 ```
 
@@ -393,29 +403,30 @@ interface WorkProject {
 **Path**: `src/app/globals.css`
 
 #### `.glow-text`
+
 Text shadow glow effect.
 
 #### `.glow-box`
+
 Box shadow glow effect.
 
 #### `.spotlight`
+
 Cursor-following light overlay.
 
 #### `.card-shine`
+
 Hover sheen animation.
 
 #### `.skeleton`
+
 Loading placeholder animation.
 
 ### CSS Variables
 
 ```css
---bg-primary: #0a0a0f
---bg-secondary: #121218
---text-primary: #ffffff
---text-secondary: #a1a1aa
---accent-primary: #0ea5e9
---accent-glow: rgba(14, 165, 233, 0.4)
+--bg-primary: #0a0a0f --bg-secondary: #121218 --text-primary: #ffffff --text-secondary: #a1a1aa
+  --accent-primary: #0ea5e9 --accent-glow: rgba(14, 165, 233, 0.4);
 ```
 
 ---
@@ -436,16 +447,10 @@ Loading placeholder animation.
 ### Image Optimization
 
 Use Next.js Image component:
+
 ```tsx
 import Image from 'next/image'
-
-<Image
-  src="/path/to/image.jpg"
-  alt="Description"
-  width={800}
-  height={600}
-  priority={aboveFold}
-/>
+;<Image src="/path/to/image.jpg" alt="Description" width={800} height={600} priority={aboveFold} />
 ```
 
 ---
@@ -455,6 +460,7 @@ import Image from 'next/image'
 ### "Cannot find module '@/...'"
 
 Ensure paths are configured in `tsconfig.json`:
+
 ```json
 "paths": {
   "@/*": ["./src/*"]
@@ -464,9 +470,12 @@ Ensure paths are configured in `tsconfig.json`:
 ### GSAP/Lenis Not Working
 
 Check initialization in main `page.tsx`:
+
 ```typescript
 useEffect(() => {
-  const lenis = new Lenis({ /* config */ })
+  const lenis = new Lenis({
+    /* config */
+  })
   initSmoothScroll(lenis)
   return () => lenis.destroy()
 }, [])
@@ -493,4 +502,3 @@ When adding new components:
 ---
 
 For more help, see README.md and SETUP.md.
-

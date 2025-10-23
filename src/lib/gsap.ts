@@ -29,6 +29,8 @@ export function initSmoothScroll(lenisInstance: any) {
 
 /**
  * Create pinned scroll sequence for hero narrative
+ * Optimized for 48FPS with smooth text transitions
+ * Each scroll brings a new text, removing the old one
  */
 export function createPinnedSequence(
     containerRef: HTMLElement,
@@ -41,28 +43,49 @@ export function createPinnedSequence(
         scrollTrigger: {
             trigger: containerRef,
             start: 'top top',
-            end: '+=300%',
+            end: `+=${lines.length * 100}%`,
             pin: true,
-            scrub: 1,
+            scrub: 0.5, // Reduced scrub value for smoother, more responsive animation
             anticipatePin: 1,
+            invalidateOnRefresh: true,
         },
     });
 
+    // Set initial state for all lines (hidden)
+    gsap.set(lines, { opacity: 0, y: 60, scale: 0.95 });
+
     lines.forEach((line, index) => {
+        const startTime = index * 1.2;
+
         // Fade in current line
-        tl.fromTo(
+        tl.to(
             line,
-            { opacity: 0, y: 50, scale: 0.9 },
-            { opacity: 1, y: 0, scale: 1, duration: 1 },
-            index * 1.5
+            {
+                opacity: 1,
+                y: 0,
+                scale: 1,
+                duration: 0.6,
+                ease: 'power2.out'
+            },
+            startTime
         );
 
-        // Hold
-        tl.to(line, { opacity: 1, duration: 0.5 });
+        // Hold the line visible
+        tl.to(line, { opacity: 1, duration: 0.4 }, startTime + 0.6);
 
-        // Fade out (except last line)
+        // Fade out (except last line) - remove old text smoothly
         if (index < lines.length - 1) {
-            tl.to(line, { opacity: 0, y: -50, scale: 1.1, duration: 1 });
+            tl.to(
+                line,
+                {
+                    opacity: 0,
+                    y: -60,
+                    scale: 0.95,
+                    duration: 0.6,
+                    ease: 'power2.in'
+                },
+                startTime + 1.0
+            );
         }
     });
 

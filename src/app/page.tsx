@@ -6,7 +6,6 @@ import Lenis from 'lenis'
 import { initSmoothScroll } from '@/lib/gsap'
 import Navigation from './(components)/Navigation'
 import LightPointer from './(components)/LightPointer'
-import PinnedScroller from './(components)/PinnedScroller'
 import CopyBeats from './(components)/CopyBeats'
 import TechGrid from './(components)/TechGrid'
 import CaseCard from './(components)/CaseCard'
@@ -15,11 +14,11 @@ import ResumeCTA from './(components)/ResumeCTA'
 import MotionToggle from './(components)/MotionToggle'
 import { getAllProjects } from '@/data/projects'
 
-// Dynamically import HeroCanvas to avoid SSR issues with Three.js
+// Dynamically import HeroCanvas (unified hero section) to avoid SSR issues with Three.js
 const HeroCanvas = dynamic(() => import('./(components)/HeroCanvas'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full flex items-center justify-center">
+    <div className="w-full h-screen flex items-center justify-center hero-gradient">
       <div className="text-9xl font-bold text-white/20 animate-pulse">I</div>
     </div>
   ),
@@ -67,33 +66,8 @@ export default function Home() {
       <MotionToggle />
 
       <main className="relative">
-        {/* Hero Section */}
-        <section id="hero" className="relative h-screen overflow-hidden hero-gradient">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <HeroCanvas />
-          </div>
-
-          {/* Scroll Indicator */}
-          <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 animate-bounce">
-            <span className="text-sm text-gray-400 uppercase tracking-wider">Scroll</span>
-            <svg
-              className="w-6 h-6 text-primary-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 14l-7 7m0 0l-7-7m7 7V3"
-              />
-            </svg>
-          </div>
-        </section>
-
-        {/* Narrative Sequence - Pinned Scroll */}
-        <PinnedScroller lines={narrativeLines} />
+        {/* Unified Hero Section - Pinned with 'I' movement and narrative texts */}
+        <HeroCanvas lines={narrativeLines} />
 
         {/* Introduction */}
         <section className="min-h-screen flex items-center justify-center px-4 py-24 bg-gradient-to-b from-transparent to-black/50">

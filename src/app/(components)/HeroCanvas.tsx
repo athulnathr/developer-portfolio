@@ -1,27 +1,42 @@
 'use client'
 
-import { useRef, useState, Suspense } from 'react'
+import { useRef, useState, Suspense, useEffect } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Text3D, Center, Environment } from '@react-three/drei'
 import { useLightPointer } from '@/hooks/useLightPointer'
 import { useMotionSettings } from '@/hooks/useMotionSettings'
+import { gsap } from '@/lib/gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import * as THREE from 'three'
 
 /**
- * Animated 'I' mesh with reactive lighting
+ * Animated 'I' mesh with reactive lighting and scroll-based movement
  * Light source follows cursor position
+ * Moves left by 25% on scroll coordinated with narrative texts
  */
 function AnimatedI() {
   const meshRef = useRef<THREE.Mesh>(null)
   const lightRef = useRef<THREE.PointLight>(null)
   const position = useLightPointer(0.08)
   const [isHovered, setIsHovered] = useState(false)
+  const [targetX, setTargetX] = useState(0)
+
+  // Expose setTargetX globally so we can control it from ScrollTrigger
+  useEffect(() => {
+    ;(window as any).__setIPosition = setTargetX
+    return () => {
+      delete (window as any).__setIPosition
+    }
+  }, [])
 
   useFrame((state) => {
     if (!meshRef.current) return
 
     // Subtle rotation animation
     meshRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.3) * 0.1
+
+    // Smooth horizontal movement using lerp for 48FPS animation
+    meshRef.current.position.x += (targetX - meshRef.current.position.x) * 0.1
 
     // Update light position based on cursor (normalized)
     if (lightRef.current) {
@@ -80,7 +95,7 @@ function FallbackI() {
   const [isHovered, setIsHovered] = useState(false)
 
   return (
-    <div className="flex items-center justify-center h-full">
+    <div className="fallback-i">
       <h1
         className={`text-[20rem] font-bold text-white transition-all duration-300 cursor-default select-none ${
           isHovered ? 'glow-text scale-105' : ''
@@ -99,35 +114,187 @@ function FallbackI() {
   )
 }
 
+interface HeroSectionProps {
+  lines: string[]
+}
+
 /**
- * HeroCanvas component
- * Renders interactive 3D 'I' logo with cursor-reactive lighting
- * Falls back to CSS version if WebGL is unavailable
+ * Unified Hero Section Component
+ * Combines 3D 'I' logo with narrative texts in a pinned scroll experience
+ * - Hero section stays pinned during entire animation sequence
+ * - 'I' moves left as user scrolls
+ * - Narrative texts appear next to it progressively
+ * - Unpins after all texts are shown, allowing normal page scroll
+ * Targets 48FPS performance
  */
-export default function HeroCanvas() {
+export default function HeroCanvas({ lines }: HeroSectionProps) {
   const { reduceMotion } = useMotionSettings()
   const [useWebGL, setUseWebGL] = useState(true)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const lineRefs = useRef<HTMLDivElement[]>([])
+  const canvasContainerRef = useRef<HTMLDivElement>(null)
 
-  // Use CSS fallback if reduced motion is preferred
-  if (reduceMotion || !useWebGL) {
-    return <FallbackI />
+  useEffect(() => {
+    if (!containerRef.current || reduceMotion) return
+
+    const validRefs = lineRefs.current.filter((ref) => ref !== null)
+    if (validRefs.length === 0) return
+
+    // Create coordinated scroll animation
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: containerRef.current,
+        start: 'top top',
+        end: `+=${lines.length * 100}%`,
+        pin: true,
+        scrub: 0.5,
+        anticipatePin: 1,
+        invalidateOnRefresh: true,
+        onUpdate: (self) => {
+          // Update 'I' position based on scroll progress
+          // Move from 0 to -2.5 (25% left in 3D space)
+          const progress = self.progress
+          const targetX = -progress * 2.5
+          if ((window as any).__setIPosition) {
+            ;(window as any).__setIPosition(targetX)
+          }
+
+          // For CSS fallback
+          if (canvasContainerRef.current) {
+            const fallbackI = canvasContainerRef.current.querySelector('.fallback-i')
+            if (fallbackI) {
+              ;(fallbackI as HTMLElement).style.transform = `translateX(-${progress * 25}%)`
+            }
+          }
+        },
+      },
+    })
+
+    // Set initial state for all text lines
+    gsap.set(validRefs, { opacity: 0, x: 100, scale: 0.95 })
+
+    // Animate each text line
+    validRefs.forEach((line, index) => {
+      const startTime = index * 1.2
+
+      // Fade in current line
+      tl.to(
+        line,
+        {
+          opacity: 1,
+          x: 0,
+          scale: 1,
+          duration: 0.6,
+          ease: 'power2.out',
+        },
+        startTime
+      )
+
+      // Hold the line visible
+      tl.to(line, { opacity: 1, duration: 0.4 }, startTime + 0.6)
+
+      // Fade out (except last line)
+      if (index < validRefs.length - 1) {
+        tl.to(
+          line,
+          {
+            opacity: 0,
+            x: -100,
+            scale: 0.95,
+            duration: 0.6,
+            ease: 'power2.in',
+          },
+          startTime + 1.0
+        )
+      }
+    })
+
+    return () => {
+      tl.kill()
+      ScrollTrigger.getAll().forEach((trigger) => {
+        if (trigger.vars.trigger === containerRef.current) {
+          trigger.kill()
+        }
+      })
+    }
+  }, [reduceMotion, lines.length])
+
+  // Reduced motion version
+  if (reduceMotion) {
+    return (
+      <section className="min-h-screen flex flex-col items-center justify-center gap-12 px-4 py-20 hero-gradient">
+        <div className="text-9xl font-bold text-white mb-8">I</div>
+        {lines.map((line, index) => (
+          <div key={index} className="text-center">
+            <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white">{line}</h2>
+          </div>
+        ))}
+      </section>
+    )
   }
 
   return (
-    <div className="w-full h-full">
-      <Canvas
-        camera={{ position: [0, 0, 6], fov: 50 }}
-        dpr={[1, 2]}
-        onCreated={({ gl }) => {
-          gl.setClearColor('#0a0a0f')
-        }}
-        onError={() => setUseWebGL(false)}
+    <section
+      ref={containerRef}
+      className="relative h-screen overflow-hidden hero-gradient flex items-center justify-center"
+    >
+      {/* 3D 'I' Logo / Fallback */}
+      <div
+        ref={canvasContainerRef}
+        className="absolute left-0 top-0 w-1/2 h-full flex items-center justify-center"
       >
-        <Suspense fallback={null}>
-          <AnimatedI />
-          <Environment preset="city" />
-        </Suspense>
-      </Canvas>
-    </div>
+        {useWebGL ? (
+          <Canvas
+            camera={{ position: [0, 0, 6], fov: 50 }}
+            dpr={[1, 2]}
+            onCreated={({ gl }) => {
+              gl.setClearColor('#0a0a0f')
+            }}
+            onError={() => setUseWebGL(false)}
+            className="w-full h-full"
+          >
+            <Suspense fallback={null}>
+              <AnimatedI />
+              <Environment preset="city" />
+            </Suspense>
+          </Canvas>
+        ) : (
+          <FallbackI />
+        )}
+      </div>
+
+      {/* Narrative Texts */}
+      <div className="absolute right-0 top-0 w-1/2 h-full flex items-center justify-center px-8">
+        {lines.map((line, index) => (
+          <div
+            key={index}
+            ref={(el) => {
+              if (el) lineRefs.current[index] = el
+            }}
+            className="absolute"
+          >
+            <h2 className="text-4xl md:text-6xl lg:text-8xl font-bold text-white">{line}</h2>
+          </div>
+        ))}
+      </div>
+
+      {/* Scroll Indicator */}
+      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 animate-bounce">
+        <span className="text-sm text-gray-400 uppercase tracking-wider">Scroll</span>
+        <svg
+          className="w-6 h-6 text-primary-400"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 14l-7 7m0 0l-7-7m7 7V3"
+          />
+        </svg>
+      </div>
+    </section>
   )
 }

@@ -6,14 +6,16 @@ An immersive, interactive portfolio showcasing UI engineering mastery with light
 
 ## 🚀 Features
 
-- **Interactive 3D Hero**: WebGL-powered 'I' logo with cursor-reactive lighting (React Three Fiber)
+- **Unified Pinned Hero**: Integrated 3D 'I' logo with narrative text sequence in a single pinned scroll experience
+- **Coordinated Scroll Animations**: 'I' smoothly moves left while narrative texts appear beside it, optimized for 48FPS
+- **WebGL 3D Graphics**: Cursor-reactive lighting on 3D 'I' logo (React Three Fiber)
 - **Smooth Scroll**: Lenis-powered inertia scrolling with GSAP ScrollTrigger integration
-- **Pinned Narratives**: Scroll-based story sequences with fade transitions
+- **Progressive Text Reveal**: Story sequences fade in/out smoothly as you scroll through the hero
 - **Light Pointer**: Cursor-following spotlight effect across the entire experience
 - **Tech Stack Grid**: Filterable technology showcase with category chips
 - **Case Studies**: Project cards with detailed challenge-approach-outcome pages
 - **Accessibility First**: Reduced motion toggle, keyboard navigation, WCAG AA compliance
-- **Performance Optimized**: <2.5s LCP, 45+ FPS, progressive enhancement
+- **Performance Optimized**: <2.5s LCP, 48+ FPS, progressive enhancement
 
 ## 🛠 Tech Stack
 
@@ -49,9 +51,8 @@ Visit [http://localhost:3000](http://localhost:3000) to view the portfolio.
 src/
 ├── app/
 │   ├── (components)/          # Reusable UI components
-│   │   ├── HeroCanvas.tsx     # 3D 'I' with lighting
+│   │   ├── HeroCanvas.tsx     # Unified hero: 3D 'I' + narrative texts
 │   │   ├── LightPointer.tsx   # Cursor spotlight
-│   │   ├── PinnedScroller.tsx # Scroll-pinned narrative
 │   │   ├── TechGrid.tsx       # Technology stack
 │   │   ├── CaseCard.tsx       # Project cards
 │   │   ├── ContactStrip.tsx   # Contact form
@@ -74,21 +75,24 @@ src/
 
 ## 🎯 Key Components
 
-### HeroCanvas
-- WebGL 3D 'I' logo with cursor-reactive point light
-- Hover glow effects with emissive materials
-- Automatic fallback to CSS-based version for low-performance devices
+### HeroCanvas (Unified Hero Section)
 
-### PinnedScroller
-- GSAP ScrollTrigger pinning for narrative sequences
-- Smooth fade transitions between text lines
-- Respects reduced motion preferences
+- **Pinned Scroll Experience**: Entire hero section stays fixed while content animates
+- **3D 'I' Logo**: WebGL-powered with cursor-reactive point light and hover glow effects
+- **Coordinated Movement**: 'I' smoothly moves left (25%) as narrative texts appear on the right
+- **Progressive Text Reveal**: Each text fades in while the previous one fades out
+- **48FPS Optimized**: GSAP ScrollTrigger with optimized scrub values
+- **Seamless Transition**: Unpins after final text ("I'm Athul Nath") to allow normal page scroll
+- **Accessibility**: Automatic fallback to CSS version for reduced motion preferences
+- **Responsive Layout**: Split-screen design with 'I' on left, texts on right
 
 ### LightPointer
+
 - Smooth cursor-following spotlight using RAF and lerp
 - Disabled automatically when reduced motion is enabled
 
 ### TechGrid
+
 - Category filtering (Frontend, 3D, Streaming, Tooling)
 - Hover effects with light-reactive cards
 - Animated layout transitions with Framer Motion
@@ -143,7 +147,6 @@ colors: {
 
 1. **3D Font File**: Place `inter_bold.json` in `/public/fonts/` for Text3D component
    - Generate using [facetype.js](https://gero3.github.io/facetype.js/)
-   
 2. **Resume PDF**: Place your resume at `/public/resume-athul-nath.pdf`
 
 3. **Project Images**: Add project thumbnails to `/public/projects/`
@@ -177,6 +180,7 @@ Or connect your GitHub repository to Vercel for automatic deployments.
 ### Environment Variables
 
 No environment variables required for basic deployment. Add your own as needed for:
+
 - Contact form API
 - Analytics
 - CMS integration
@@ -184,7 +188,8 @@ No environment variables required for basic deployment. Add your own as needed f
 ## 📊 Performance Targets
 
 - **LCP**: < 2.5s
-- **FPS**: ≥ 45fps during scroll
+- **FPS**: ≥ 48fps during scroll and animations
+- **Scroll Performance**: RequestAnimationFrame optimization for smooth 48FPS
 - **First Load JS**: < 200KB
 - **Lighthouse Score**: 90+
 
@@ -195,6 +200,7 @@ MIT License - feel free to use this template for your own portfolio!
 ## 🙏 Credits
 
 Built with ❤️ using:
+
 - [Next.js](https://nextjs.org)
 - [React Three Fiber](https://docs.pmnd.rs/react-three-fiber)
 - [GSAP](https://greensock.com/gsap)
@@ -204,4 +210,3 @@ Built with ❤️ using:
 ---
 
 **Athul Nath** — Lead UI Engineer & Senior Frontend Developer
-
