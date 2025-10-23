@@ -11,7 +11,7 @@ An immersive, interactive portfolio showcasing UI engineering mastery with light
 - **Smart Animation Choreography**: 'I' moves to 25% left in first moments, then locks while narrative texts cycle through
 - **Controlled Content Reveal**: Portfolio sections only enter viewport after hero completes, ensuring smooth transition
 - **WebGL 3D Graphics**: Cursor-reactive lighting on 3D 'I' logo (React Three Fiber)
-- **Smooth Scroll**: Lenis-powered inertia scrolling with GSAP ScrollTrigger integration
+- **Smooth Scroll**: Native smooth scrolling with GSAP ScrollTrigger integration
 - **Progressive Content Reveal**: Story sequences complete before revealing portfolio sections
 - **Light Pointer**: Cursor-following spotlight effect across the entire experience
 - **Tech Stack Grid**: Filterable technology showcase with category chips
@@ -26,7 +26,6 @@ An immersive, interactive portfolio showcasing UI engineering mastery with light
 - **Styling**: Tailwind CSS
 - **3D Graphics**: React Three Fiber, Three.js
 - **Animation**: Framer Motion, GSAP ScrollTrigger
-- **Smooth Scroll**: Lenis
 - **Deployment**: Vercel
 
 ## 📦 Installation
@@ -212,7 +211,6 @@ Built with ❤️ using:
 - [React Three Fiber](https://docs.pmnd.rs/react-three-fiber)
 - [GSAP](https://greensock.com/gsap)
 - [Framer Motion](https://www.framer.com/motion)
-- [Lenis](https://github.com/studio-freight/lenis)
 
 ---
 

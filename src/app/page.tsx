@@ -1,9 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
 import dynamic from 'next/dynamic'
-import Lenis from 'lenis'
-import { initSmoothScroll } from '@/lib/gsap'
 import Navigation from './(components)/Navigation'
 import LightPointer from './(components)/LightPointer'
 import CopyBeats from './(components)/CopyBeats'
@@ -30,30 +27,6 @@ const HeroCanvas = dynamic(() => import('./(components)/HeroCanvas'), {
  */
 export default function Home() {
   const projects = getAllProjects()
-
-  useEffect(() => {
-    // Initialize Lenis smooth scroll
-    const lenis = new Lenis({
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      orientation: 'vertical',
-      gestureOrientation: 'vertical',
-      smoothWheel: true,
-      wheelMultiplier: 1,
-      touchMultiplier: 2,
-      infinite: false,
-    })
-
-    // Sync with GSAP
-    initSmoothScroll(lenis)
-
-    // Store instance globally for potential use
-    window.lenis = lenis
-
-    return () => {
-      lenis.destroy()
-    }
-  }, [])
 
   const narrativeLines = ['Create experiences', 'Tell stories', "I'm Athul Nath"]
 

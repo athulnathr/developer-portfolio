@@ -38,10 +38,6 @@ export interface ContactFormData {
 }
 
 declare global {
-    interface Window {
-        lenis?: any;
-    }
-
     namespace JSX {
         interface IntrinsicElements {
             pointLight: any;

@@ -17,6 +17,7 @@ npm install
 ```
 
 This installs all required packages including:
+
 - Next.js 15
 - React 18
 - TypeScript
@@ -24,7 +25,6 @@ This installs all required packages including:
 - GSAP
 - Framer Motion
 - React Three Fiber
-- Lenis
 
 ### 2. Set Up Required Files
 
@@ -62,6 +62,7 @@ mkdir -p public/projects
 #### Update Personal Information
 
 **File**: `src/app/layout.tsx`
+
 ```typescript
 export const metadata: Metadata = {
   title: 'Your Name — Your Title',
@@ -71,6 +72,7 @@ export const metadata: Metadata = {
 ```
 
 **File**: `src/app/(components)/ContactStrip.tsx`
+
 ```typescript
 // Update email, LinkedIn, GitHub links
 ```
@@ -237,9 +239,9 @@ The HeroCanvas component automatically falls back to CSS. If you want to debug:
 
 If scroll animations aren't working:
 
-1. Check that Lenis is initialized (check browser console)
-2. Verify GSAP and ScrollTrigger versions match
-3. Clear `.next` folder and rebuild
+1. Verify GSAP and ScrollTrigger versions match
+2. Clear `.next` folder and rebuild
+3. Check browser console for errors
 
 ### Slow Performance
 
@@ -270,6 +272,7 @@ Mobile browsers fully supported with touch-optimized interactions.
 ## Support
 
 For issues or questions:
+
 - Check [Next.js Docs](https://nextjs.org/docs)
 - Review component comments in code
 - Test with reduced motion enabled
@@ -277,4 +280,3 @@ For issues or questions:
 ---
 
 Happy building! 🚀
-

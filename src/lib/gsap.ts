@@ -1,6 +1,6 @@
 /**
  * GSAP utility configuration and ScrollTrigger setup
- * Provides centralized animation utilities and Lenis integration
+ * Provides centralized animation utilities
  */
 
 import { gsap } from 'gsap';
@@ -9,22 +9,6 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 // Register GSAP plugins
 if (typeof window !== 'undefined') {
     gsap.registerPlugin(ScrollTrigger);
-}
-
-/**
- * Initialize Lenis smooth scroll and sync with GSAP ScrollTrigger
- */
-export function initSmoothScroll(lenisInstance: any) {
-    if (typeof window === 'undefined') return;
-
-    // Sync Lenis with GSAP ScrollTrigger
-    lenisInstance.on('scroll', ScrollTrigger.update);
-
-    gsap.ticker.add((time: number) => {
-        lenisInstance.raf(time * 1000);
-    });
-
-    gsap.ticker.lagSmoothing(0);
 }
 
 /**

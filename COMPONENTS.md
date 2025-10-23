@@ -347,10 +347,6 @@ const position = useLightPointer(0.12)
 
 **Functions**:
 
-#### `initSmoothScroll(lenisInstance)`
-
-Syncs Lenis with GSAP ScrollTrigger.
-
 #### `createPinnedSequence(container, lines, reduceMotion)`
 
 Creates scroll-pinned timeline for narrative lines.
@@ -491,20 +487,6 @@ Ensure paths are configured in `tsconfig.json`:
 "paths": {
   "@/*": ["./src/*"]
 }
-```
-
-### GSAP/Lenis Not Working
-
-Check initialization in main `page.tsx`:
-
-```typescript
-useEffect(() => {
-  const lenis = new Lenis({
-    /* config */
-  })
-  initSmoothScroll(lenis)
-  return () => lenis.destroy()
-}, [])
 ```
 
 ### WebGL Not Loading
