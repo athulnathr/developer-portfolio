@@ -7,10 +7,12 @@ An immersive, interactive portfolio showcasing UI engineering mastery with light
 ## 🚀 Features
 
 - **Unified Pinned Hero**: Integrated 3D 'I' logo with narrative text sequence in a single pinned scroll experience
-- **Coordinated Scroll Animations**: 'I' smoothly moves left while narrative texts appear beside it, optimized for 48FPS
+- **Isolated Hero Animations**: Other sections remain completely hidden and below viewport during hero, preventing premature scrolling
+- **Smart Animation Choreography**: 'I' moves to 25% left in first moments, then locks while narrative texts cycle through
+- **Controlled Content Reveal**: Portfolio sections only enter viewport after hero completes, ensuring smooth transition
 - **WebGL 3D Graphics**: Cursor-reactive lighting on 3D 'I' logo (React Three Fiber)
 - **Smooth Scroll**: Lenis-powered inertia scrolling with GSAP ScrollTrigger integration
-- **Progressive Text Reveal**: Story sequences fade in/out smoothly as you scroll through the hero
+- **Progressive Content Reveal**: Story sequences complete before revealing portfolio sections
 - **Light Pointer**: Cursor-following spotlight effect across the entire experience
 - **Tech Stack Grid**: Filterable technology showcase with category chips
 - **Case Studies**: Project cards with detailed challenge-approach-outcome pages
@@ -78,11 +80,16 @@ src/
 ### HeroCanvas (Unified Hero Section)
 
 - **Pinned Scroll Experience**: Entire hero section stays fixed while content animates
+- **Isolated Storytelling**: Other page sections hidden during hero animation for focused experience
 - **3D 'I' Logo**: WebGL-powered with cursor-reactive point light and hover glow effects
-- **Coordinated Movement**: 'I' smoothly moves left (25%) as narrative texts appear on the right
-- **Progressive Text Reveal**: Each text fades in while the previous one fades out
-- **48FPS Optimized**: GSAP ScrollTrigger with optimized scrub values
-- **Seamless Transition**: Unpins after final text ("I'm Athul Nath") to allow normal page scroll
+- **Two-Phase Animation**:
+  - **Phase 1 (0-10% scroll)**: 'I' moves from center to 25% left position
+  - **Phase 2 (10-100% scroll)**: 'I' locked in place, narrative texts cycle through
+- **Progressive Text Reveal**: Each text fades in while the previous one fades out (starts at 15% scroll)
+- **Protected Scroll Flow**: Sections physically pushed below viewport (`translateY(100vh)`) during hero
+- **Instant Section Reveal**: Sections slide into normal position at 100% hero progress
+- **48FPS Optimized**: GSAP ScrollTrigger with optimized scrub values and opacity transitions
+- **Seamless Transition**: Unpins after final text ("I'm Athul Nath") to reveal full portfolio
 - **Accessibility**: Automatic fallback to CSS version for reduced motion preferences
 - **Responsive Layout**: Split-screen design with 'I' on left, texts on right
 

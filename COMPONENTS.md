@@ -19,10 +19,14 @@ Detailed documentation for all custom components in the portfolio.
 **Features**:
 
 - **Pinned Scroll**: Entire section stays fixed while content animates
+- **Isolated Experience**: Other page sections hidden during hero animation
 - **3D 'I' Logo**: WebGL-based with cursor-reactive point light
-- **Coordinated Movement**: 'I' smoothly moves left (25%) as texts appear on right
-- **Progressive Text Reveal**: Sequential fade in/out of narrative lines
-- **48FPS Optimized**: GSAP ScrollTrigger with optimized scrub values
+- **Two-Phase Choreography**:
+  - **Early Movement (0-10%)**: 'I' moves from center to 25% left, then locks
+  - **Static Position (10-100%)**: 'I' stays at 25% left while texts animate
+- **Progressive Text Reveal**: Sequential fade in/out of narrative lines (starts at 15%)
+- **Smart Content Reveal**: Portfolio sections fade in during final 10% of animation
+- **48FPS Optimized**: GSAP ScrollTrigger with optimized scrub values and transitions
 - **Split Layout**: 'I' on left half, texts on right half
 - **Seamless Transition**: Unpins after final text to allow normal scroll
 - **Accessibility**: Fallback to static layout with reduced motion
@@ -42,18 +46,40 @@ Detailed documentation for all custom components in the portfolio.
 
 **Animation Timeline**:
 
-1. Hero section pins
-2. 'I' moves left (coordinated with scroll progress)
-3. Each text line fades in → holds → fades out
-4. Last line stays visible
-5. Section unpins, page scrolls normally
+1. **0% Scroll**: Hero section pins, other sections hidden and below viewport, 'I' centered
+2. **0-10% Scroll**: 'I' moves smoothly from center to 25% left position
+3. **10% Scroll**: 'I' locks at 25% left (stays there for remainder)
+4. **15% Scroll**: First text "Create experiences" fades in
+5. **15-40% Scroll**: First text holds, then fades out
+6. **40-65% Scroll**: Second text "Tell stories" fades in, holds, fades out
+7. **65-100% Scroll**: Final text "I'm Athul Nath" fades in and stays visible
+8. **100% Scroll**: Hero unpins, sections instantly become visible and enter viewport
+9. **Post-100%**: Normal scrolling through portfolio sections
 
 **Performance**:
 
-- Uses ScrollTrigger `onUpdate` callback for 'I' position
-- RAF-based smooth interpolation in Three.js
+- Uses ScrollTrigger `onUpdate` callback for 'I' position and section visibility
+- 'I' position calculated as: `Math.min(progress / 0.1, 1) * -2.5` (moves only in first 10%)
+- RAF-based smooth interpolation in Three.js for locked position stability
 - Optimized scrub value (0.5) for responsive feel
+- Opacity transitions with `pointer-events` management for sections
+- Dynamic text timing: evenly distributed across 85% of timeline (15% to 100%)
 - Total duration: `lines.length × 100%` scroll distance
+
+**Section Visibility Control**:
+
+The component controls the visibility of `#content-sections` element:
+
+- `progress < 1.0`: Sections completely hidden and pushed down
+  - `opacity: 0` - Invisible
+  - `visibility: hidden` - Not rendered
+  - `pointer-events: none` - No interaction
+  - `transform: translateY(100vh)` - Pushed one viewport below
+- `progress = 1.0`: Sections instantly revealed and positioned normally
+  - `transform: translateY(0)` - Slides into place
+- **Physical Positioning**: Transform keeps sections physically below viewport during hero
+- **No Premature Scrolling**: Sections cannot scroll into view during hero animation
+- On scroll back: Sections hide and push down again when entering hero zone
 
 ---
 

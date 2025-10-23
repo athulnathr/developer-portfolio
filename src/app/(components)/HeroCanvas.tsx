@@ -140,6 +140,9 @@ export default function HeroCanvas({ lines }: HeroSectionProps) {
     const validRefs = lineRefs.current.filter((ref) => ref !== null)
     if (validRefs.length === 0) return
 
+    // Get the next sections container to control visibility
+    const nextSections = document.querySelector('#content-sections')
+
     // Create coordinated scroll animation
     const tl = gsap.timeline({
       scrollTrigger: {
@@ -147,14 +150,19 @@ export default function HeroCanvas({ lines }: HeroSectionProps) {
         start: 'top top',
         end: `+=${lines.length * 100}%`,
         pin: true,
+        pinSpacing: true, // Ensures proper spacing for content below
         scrub: 0.5,
         anticipatePin: 1,
         invalidateOnRefresh: true,
         onUpdate: (self) => {
-          // Update 'I' position based on scroll progress
-          // Move from 0 to -2.5 (25% left in 3D space)
           const progress = self.progress
-          const targetX = -progress * 2.5
+
+          // Move 'I' to 25% left during first 10% of scroll, then lock it there
+          // progress 0 -> 0.1 maps to position 0 -> -2.5 (25% left)
+          // progress > 0.1 stays at -2.5
+          const moveProgress = Math.min(progress / 0.1, 1) // 0 to 1 over first 10%
+          const targetX = -moveProgress * 2.5
+
           if ((window as any).__setIPosition) {
             ;(window as any).__setIPosition(targetX)
           }
@@ -163,8 +171,37 @@ export default function HeroCanvas({ lines }: HeroSectionProps) {
           if (canvasContainerRef.current) {
             const fallbackI = canvasContainerRef.current.querySelector('.fallback-i')
             if (fallbackI) {
-              ;(fallbackI as HTMLElement).style.transform = `translateX(-${progress * 25}%)`
+              const cssProgress = Math.min(progress / 0.1, 1)
+              ;(fallbackI as HTMLElement).style.transform = `translateX(-${cssProgress * 25}%)`
             }
+          }
+        },
+        onLeave: () => {
+          // When hero unpins, reveal the next sections with smooth transition
+          if (nextSections) {
+            gsap.to(nextSections, {
+              opacity: 1,
+              duration: 0.6,
+              ease: 'power2.out',
+              onStart: () => {
+                ;(nextSections as HTMLElement).style.visibility = 'visible'
+                ;(nextSections as HTMLElement).style.pointerEvents = 'auto'
+              },
+            })
+          }
+        },
+        onEnterBack: () => {
+          // When scrolling back into hero, hide the sections again
+          if (nextSections) {
+            gsap.to(nextSections, {
+              opacity: 0,
+              duration: 0.3,
+              ease: 'power2.in',
+              onComplete: () => {
+                ;(nextSections as HTMLElement).style.visibility = 'hidden'
+                ;(nextSections as HTMLElement).style.pointerEvents = 'none'
+              },
+            })
           }
         },
       },
@@ -173,9 +210,21 @@ export default function HeroCanvas({ lines }: HeroSectionProps) {
     // Set initial state for all text lines
     gsap.set(validRefs, { opacity: 0, x: 100, scale: 0.95 })
 
+    // Set initial state for content sections (hidden and invisible)
+    if (nextSections) {
+      gsap.set(nextSections, { opacity: 0 })
+      ;(nextSections as HTMLElement).style.visibility = 'hidden'
+      ;(nextSections as HTMLElement).style.pointerEvents = 'none'
+    }
+
     // Animate each text line
+    // Start text animations after 'I' has moved (after first 10% of timeline)
+    const textStartOffset = 0.15 // Start texts at 15% to give 'I' time to settle
+
     validRefs.forEach((line, index) => {
-      const startTime = index * 1.2
+      // Distribute text animations across the remaining timeline
+      const textDuration = (1 - textStartOffset) / validRefs.length
+      const startTime = textStartOffset + index * textDuration
 
       // Fade in current line
       tl.to(
@@ -184,16 +233,17 @@ export default function HeroCanvas({ lines }: HeroSectionProps) {
           opacity: 1,
           x: 0,
           scale: 1,
-          duration: 0.6,
+          duration: textDuration * 0.3, // 30% of slot for fade in
           ease: 'power2.out',
         },
         startTime
       )
 
       // Hold the line visible
-      tl.to(line, { opacity: 1, duration: 0.4 }, startTime + 0.6)
+      const holdDuration = textDuration * 0.4 // 40% of slot for hold
+      tl.to(line, { opacity: 1, duration: holdDuration }, startTime + textDuration * 0.3)
 
-      // Fade out (except last line)
+      // Fade out (except last line which stays visible)
       if (index < validRefs.length - 1) {
         tl.to(
           line,
@@ -201,10 +251,10 @@ export default function HeroCanvas({ lines }: HeroSectionProps) {
             opacity: 0,
             x: -100,
             scale: 0.95,
-            duration: 0.6,
+            duration: textDuration * 0.3, // 30% of slot for fade out
             ease: 'power2.in',
           },
-          startTime + 1.0
+          startTime + textDuration * 0.7
         )
       }
     })
@@ -216,6 +266,12 @@ export default function HeroCanvas({ lines }: HeroSectionProps) {
           trigger.kill()
         }
       })
+      // Reset sections visibility on cleanup
+      if (nextSections) {
+        ;(nextSections as HTMLElement).style.opacity = '1'
+        ;(nextSections as HTMLElement).style.visibility = 'visible'
+        ;(nextSections as HTMLElement).style.pointerEvents = 'auto'
+      }
     }
   }, [reduceMotion, lines.length])
 
@@ -238,17 +294,18 @@ export default function HeroCanvas({ lines }: HeroSectionProps) {
       ref={containerRef}
       className="relative h-screen overflow-hidden hero-gradient flex items-center justify-center"
     >
-      {/* 3D 'I' Logo / Fallback */}
+      {/* 3D 'I' Logo / Fallback - Full width with transparent background */}
       <div
         ref={canvasContainerRef}
-        className="absolute left-0 top-0 w-1/2 h-full flex items-center justify-center"
+        className="absolute inset-0 flex items-center justify-center pointer-events-none"
       >
         {useWebGL ? (
           <Canvas
             camera={{ position: [0, 0, 6], fov: 50 }}
             dpr={[1, 2]}
+            gl={{ alpha: true, antialias: true }}
             onCreated={({ gl }) => {
-              gl.setClearColor('#0a0a0f')
+              gl.setClearColor('#000000', 0) // Transparent background
             }}
             onError={() => setUseWebGL(false)}
             className="w-full h-full"
@@ -263,7 +320,7 @@ export default function HeroCanvas({ lines }: HeroSectionProps) {
         )}
       </div>
 
-      {/* Narrative Texts */}
+      {/* Narrative Texts - Positioned on right side */}
       <div className="absolute right-0 top-0 w-1/2 h-full flex items-center justify-center px-8">
         {lines.map((line, index) => (
           <div
