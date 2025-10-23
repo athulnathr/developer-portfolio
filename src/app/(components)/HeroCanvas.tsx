@@ -150,7 +150,7 @@ export default function HeroCanvas({ lines }: HeroSectionProps) {
         start: 'top top',
         end: `+=${lines.length * 100}%`,
         pin: true,
-        pinSpacing: true, // Ensures proper spacing for content below
+        pinSpacing: true, // Create proper spacing for content below
         scrub: 0.5,
         anticipatePin: 1,
         invalidateOnRefresh: true,
@@ -179,6 +179,10 @@ export default function HeroCanvas({ lines }: HeroSectionProps) {
         onLeave: () => {
           // When hero unpins, reveal the next sections with smooth transition
           if (nextSections) {
+            // Return content to normal positioning
+            ;(nextSections as HTMLElement).style.position = 'relative'
+            ;(nextSections as HTMLElement).style.top = '0'
+
             gsap.to(nextSections, {
               opacity: 1,
               duration: 0.6,
@@ -200,6 +204,9 @@ export default function HeroCanvas({ lines }: HeroSectionProps) {
               onComplete: () => {
                 ;(nextSections as HTMLElement).style.visibility = 'hidden'
                 ;(nextSections as HTMLElement).style.pointerEvents = 'none'
+                // Position content absolutely to prevent it from affecting scroll during pin
+                ;(nextSections as HTMLElement).style.position = 'absolute'
+                ;(nextSections as HTMLElement).style.top = '100vh'
               },
             })
           }
@@ -210,11 +217,15 @@ export default function HeroCanvas({ lines }: HeroSectionProps) {
     // Set initial state for all text lines
     gsap.set(validRefs, { opacity: 0, x: 100, scale: 0.95 })
 
-    // Set initial state for content sections (hidden and invisible)
+    // Set initial state for content sections (hidden and positioned absolutely)
     if (nextSections) {
       gsap.set(nextSections, { opacity: 0 })
       ;(nextSections as HTMLElement).style.visibility = 'hidden'
       ;(nextSections as HTMLElement).style.pointerEvents = 'none'
+      ;(nextSections as HTMLElement).style.position = 'absolute'
+      ;(nextSections as HTMLElement).style.top = '100vh'
+      ;(nextSections as HTMLElement).style.width = '100%'
+      ;(nextSections as HTMLElement).style.paddingTop = '300vh'
     }
 
     // Animate each text line
@@ -266,11 +277,13 @@ export default function HeroCanvas({ lines }: HeroSectionProps) {
           trigger.kill()
         }
       })
-      // Reset sections visibility on cleanup
+      // Reset sections to normal state on cleanup
       if (nextSections) {
         ;(nextSections as HTMLElement).style.opacity = '1'
         ;(nextSections as HTMLElement).style.visibility = 'visible'
         ;(nextSections as HTMLElement).style.pointerEvents = 'auto'
+        ;(nextSections as HTMLElement).style.position = 'relative'
+        ;(nextSections as HTMLElement).style.top = '0'
       }
     }
   }, [reduceMotion, lines.length])

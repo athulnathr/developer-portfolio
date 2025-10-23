@@ -5,10 +5,11 @@
 
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 
 // Register GSAP plugins
 if (typeof window !== 'undefined') {
-    gsap.registerPlugin(ScrollTrigger);
+    gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 }
 
 /**
@@ -122,5 +123,5 @@ export function fadeInOnScroll(elements: HTMLElement | HTMLElement[], stagger: n
     );
 }
 
-export { gsap, ScrollTrigger };
+export { gsap, ScrollTrigger, ScrollToPlugin };
 
