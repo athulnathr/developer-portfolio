@@ -115,3 +115,41 @@ export const ease = {
     elastic: [0.87, 0, 0.13, 1],
 };
 
+// Section animations
+export const sectionFadeIn: Variants = {
+    hidden: { opacity: 0, y: 100 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+            duration: 1,
+            ease: [0.22, 1, 0.36, 1],
+        },
+    },
+};
+
+export const cardHover: Variants = {
+    rest: { scale: 1 },
+    hover: {
+        scale: 1.05,
+        y: -8,
+        transition: {
+            duration: 0.3,
+            ease: 'easeOut',
+        },
+    },
+};
+
+export const glowPulse: Variants = {
+    initial: { opacity: 0.5, scale: 1 },
+    animate: {
+        opacity: [0.5, 1, 0.5],
+        scale: [1, 1.1, 1],
+        transition: {
+            duration: 2,
+            repeat: Infinity,
+            ease: 'easeInOut',
+        },
+    },
+};
+
