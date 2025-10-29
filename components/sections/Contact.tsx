@@ -4,7 +4,6 @@ import { motion, useInView } from "framer-motion";
 import { content } from "@/constants/content";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { RoboFaceReveal } from "@/components/Robo/RoboFaceReveal";
 import { useHasMounted } from "@/hooks/useHasMounted";
 
 export const Contact: React.FC = () => {
@@ -19,7 +18,6 @@ export const Contact: React.FC = () => {
   const [status, setStatus] = useState<
     "idle" | "sending" | "success" | "error"
   >("idle");
-  const [isRoboHovered, setIsRoboHovered] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,15 +58,12 @@ export const Contact: React.FC = () => {
           animate={hasMounted ? { opacity: 1, x: 0 } : {}}
           className="lg:block hidden"
         >
-          <div
-            className="w-full h-96 flex items-center justify-center cursor-pointer"
-            onMouseEnter={() => setIsRoboHovered(true)}
-            onMouseLeave={() => setIsRoboHovered(false)}
-          >
-            <RoboFaceReveal isHovered={isRoboHovered} />
+          <div className="w-full h-96 flex items-center justify-center">
+            {/* Robot with face reveal will be positioned here via Three.js Canvas */}
           </div>
           <p className="text-center text-gray-400 mt-4 text-sm">
-            Hover to reveal the person behind the robot! ✨
+            Move your cursor over the robot's face to reveal the person behind
+            it! ✨
           </p>
         </motion.div>
 

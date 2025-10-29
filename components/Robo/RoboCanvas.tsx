@@ -4,6 +4,7 @@ import { Canvas } from "@react-three/fiber";
 import { Suspense, useEffect, useState } from "react";
 import { RoboModel } from "./RoboModel";
 import { ParticleSystem } from "./ParticleSystem";
+import { TechGrid } from "../effects/TechGrid";
 import { SectionName } from "@/hooks/useScrollProgress";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 
@@ -12,6 +13,8 @@ interface RoboCanvasProps {
   sectionProgress: number;
   cursorPosition: { normalizedX: number; normalizedY: number };
   showParticles?: boolean;
+  transformationLevel?: number;
+  onProjectHover?: number | null;
 }
 
 export const RoboCanvas: React.FC<RoboCanvasProps> = ({
@@ -19,6 +22,8 @@ export const RoboCanvas: React.FC<RoboCanvasProps> = ({
   sectionProgress,
   cursorPosition,
   showParticles = false,
+  transformationLevel = 0,
+  onProjectHover = null,
 }) => {
   const [isClient, setIsClient] = useState(false);
 
@@ -58,11 +63,18 @@ export const RoboCanvas: React.FC<RoboCanvasProps> = ({
           {/* Camera */}
           <PerspectiveCamera makeDefault position={[0, 0, 8]} fov={50} />
 
+          {/* Background Tech Grid (Hero section) */}
+          {currentSection === "hero" && (
+            <TechGrid size={20} divisions={20} color="#00d9ff" opacity={0.15} />
+          )}
+
           {/* Robot */}
           <RoboModel
             currentSection={currentSection}
             sectionProgress={sectionProgress}
             cursorPosition={cursorPosition}
+            transformationLevel={transformationLevel}
+            onProjectHover={onProjectHover}
           />
 
           {/* Particle Effects */}

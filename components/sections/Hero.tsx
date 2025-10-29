@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { content } from "@/constants/content";
 import { ScrollIndicator } from "@/components/ui/ScrollIndicator";
+import { ParallaxBackground } from "@/components/effects/ParallaxBackground";
 import { useEffect, useState } from "react";
 import { useHasMounted } from "@/hooks/useHasMounted";
 
@@ -30,6 +31,9 @@ export const Hero: React.FC = () => {
       id="hero"
       className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-background-dark via-background to-background-light"
     >
+      {/* Parallax Background */}
+      <ParallaxBackground />
+
       {/* Animated background geometric patterns */}
       <div className="absolute inset-0 opacity-20">
         <motion.div

@@ -6,7 +6,11 @@ import { useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useHasMounted } from "@/hooks/useHasMounted";
 
-export const Projects: React.FC = () => {
+interface ProjectsProps {
+  onProjectHover?: (id: number | null) => void;
+}
+
+export const Projects: React.FC<ProjectsProps> = ({ onProjectHover }) => {
   const hasMounted = useHasMounted();
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
@@ -47,6 +51,8 @@ export const Projects: React.FC = () => {
               animate={hasMounted ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6, delay: index * 0.05 }}
               className="group relative"
+              onMouseEnter={() => onProjectHover?.(project.id)}
+              onMouseLeave={() => onProjectHover?.(null)}
             >
               <div className="relative overflow-hidden rounded-2xl bg-background-light border border-primary/20 hover:border-primary/50 transition-all duration-300 cursor-pointer">
                 {/* Project Image Placeholder */}

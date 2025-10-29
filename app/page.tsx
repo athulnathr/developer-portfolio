@@ -6,13 +6,11 @@ import { Skills } from "@/components/sections/Skills";
 import { Projects } from "@/components/sections/Projects";
 import { Contact } from "@/components/sections/Contact";
 import { Footer } from "@/components/sections/Footer";
-import { SpeechBubble } from "@/components/ui/SpeechBubble";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useScrollProgress } from "@/hooks/useScrollProgress";
 import { useCursorTracking } from "@/hooks/useCursorTracking";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useHasMounted } from "@/hooks/useHasMounted";
-import { content } from "@/constants/content";
 import { useEffect, useState, Suspense } from "react";
 import dynamic from "next/dynamic";
 
@@ -30,34 +28,19 @@ export default function Home() {
   const scrollProgress = useScrollProgress();
   const cursorPosition = useCursorTracking();
   const prefersReducedMotion = useReducedMotion();
-  const [speechBubbleText, setSpeechBubbleText] = useState("");
   const [showParticles, setShowParticles] = useState(false);
+  const [transformationLevel, setTransformationLevel] = useState(0);
+  const [hoveredProject, setHoveredProject] = useState<number | null>(null);
 
-  // Update speech bubble based on current section
+  // Update transformation level for Skills section
   useEffect(() => {
-    switch (scrollProgress.currentSection) {
-      case "hero":
-        setSpeechBubbleText(content.hero.greeting);
-        break;
-      case "about":
-        setSpeechBubbleText(content.about.greeting);
-        break;
-      case "skills":
-        setSpeechBubbleText(content.skills.greeting);
-        setShowParticles(scrollProgress.sectionProgress.skills > 0.5);
-        break;
-      case "projects":
-        setSpeechBubbleText("Check out my work!");
-        break;
-      case "contact":
-        setSpeechBubbleText(content.contact.greeting);
-        break;
-      case "footer":
-        setSpeechBubbleText(content.footer.goodbye);
-        setShowParticles(false);
-        break;
-      default:
-        setSpeechBubbleText("");
+    if (scrollProgress.currentSection === "skills") {
+      const progress = scrollProgress.sectionProgress.skills;
+      const level = Math.floor(progress * 4); // 0-3 transformation stages
+      setTransformationLevel(Math.min(level, 3));
+      setShowParticles(progress > 0.3);
+    } else {
+      setShowParticles(false);
     }
   }, [scrollProgress.currentSection, scrollProgress.sectionProgress]);
 
@@ -74,16 +57,9 @@ export default function Home() {
               }
               cursorPosition={cursorPosition}
               showParticles={showParticles}
+              transformationLevel={transformationLevel}
+              onProjectHover={hoveredProject}
             />
-
-            {/* Speech Bubble */}
-            {speechBubbleText && (
-              <SpeechBubble
-                text={speechBubbleText}
-                position={{ x: 60, y: 30 }}
-                delay={0.5}
-              />
-            )}
           </Suspense>
         </ErrorBoundary>
       )}
@@ -92,7 +68,7 @@ export default function Home() {
       <Hero />
       <About />
       <Skills />
-      <Projects />
+      <Projects onProjectHover={setHoveredProject} />
       <Contact />
       <Footer />
     </main>
