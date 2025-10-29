@@ -5,6 +5,7 @@ import { content } from "@/constants/content";
 import { useHasMounted } from "@/hooks/useHasMounted";
 
 export const Footer: React.FC = () => {
+  return <></>;
   const hasMounted = useHasMounted();
   const currentYear = 2026;
 

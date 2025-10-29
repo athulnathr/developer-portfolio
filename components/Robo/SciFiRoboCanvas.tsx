@@ -8,6 +8,7 @@ import { SciFiCameraController } from "./SciFiCameraController";
 import { Chair } from "./Chair";
 import { SectionName } from "@/hooks/useScrollProgress";
 import { PerspectiveCamera } from "@react-three/drei";
+import { ImportedRoom } from "./ImportedRoom";
 
 interface SciFiRoboCanvasProps {
   currentSection: SectionName;
@@ -90,19 +91,17 @@ export const SciFiRoboCanvas: React.FC<SciFiRoboCanvasProps> = ({
             color="#0088cc"
           />
 
-          {/* Camera with SciFi Controller */}
-          <PerspectiveCamera makeDefault position={[0, 3, 18]} fov={50} />
+          {/* Camera with SciFi Controller - Fixed with subtle parallax */}
+          <PerspectiveCamera makeDefault position={[0, 2, 8]} fov={50} />
           <SciFiCameraController
-            currentSection={currentSection}
-            sectionProgress={sectionProgress}
             cursorPosition={cursorPosition}
             isInitialLoad={isInitialLoad}
           />
 
-          {/* SciFi Room Environment */}
-          <SciFiRoom />
+          {/* SciFi Room Environment - Fixed at 45°, scaled to fill viewport */}
+          <ImportedRoom position={[0, 0, 0]} />
 
-          {/* Chair (always visible since robot is sitting) */}
+          {/* Chair (always visible since robot is sitting) - positioned in room */}
           <Chair />
 
           {/* Robot */}
