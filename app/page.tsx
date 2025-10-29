@@ -18,13 +18,18 @@ import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Dynamically import RoboCanvas to avoid SSR issues with Three.js
+// Toggle between implementations:
+// const RoboCanvas = dynamic(() => import("@/components/Robo/RoboCanvas").then((mod) => mod.RoboCanvas), { ssr: false, loading: () => null }); // OLD wireframe scene
 const RoboCanvas = dynamic(
-  () => import("@/components/Robo/RoboCanvas").then((mod) => mod.RoboCanvas),
+  () =>
+    import("@/components/Robo/SciFiRoboCanvas").then(
+      (mod) => mod.SciFiRoboCanvas
+    ),
   {
     ssr: false,
     loading: () => null,
   }
-);
+); // NEW sci-fi room scene
 
 export default function Home() {
   const hasMounted = useHasMounted();
