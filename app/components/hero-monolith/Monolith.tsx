@@ -11,6 +11,7 @@ import { calculateCrackLines } from "@/app/lib/monolith/fracture";
 interface MonolithProps {
   crackStage: number;
   onShatter: () => void;
+  onCrackProgression: () => void;
   visible: boolean;
   position?: [number, number, number];
   lightPosition: THREE.Vector3;
@@ -19,6 +20,7 @@ interface MonolithProps {
 export default function Monolith({
   crackStage,
   onShatter,
+  onCrackProgression,
   visible,
   position = [0, 2, 0],
   lightPosition,
@@ -91,14 +93,35 @@ export default function Monolith({
         const mat = line.material as THREE.LineBasicMaterial;
         mat.opacity = 0.6 + Math.sin(state.clock.elapsedTime * 3) * 0.2;
       });
+
+      // Increase glow intensity based on crack stage
+      const material = meshRef.current.material as THREE.MeshStandardMaterial;
+      if (material) {
+        const baseIntensity = 0.3;
+        const crackBoost = crackStage * 0.2;
+        const pulse = Math.sin(state.clock.elapsedTime * 2) * 0.1;
+        material.emissiveIntensity = baseIntensity + crackBoost + pulse;
+      }
     }
   });
 
   const handleClick = () => {
-    if (crackStage < 3) {
-      // Crack further
+    if (crackStage < 2) {
+      // Progress to next crack stage
+      onCrackProgression();
+
+      // Visual feedback - pulse effect
+      if (meshRef.current) {
+        const originalScale = meshRef.current.scale.clone();
+        meshRef.current.scale.multiplyScalar(1.05);
+        setTimeout(() => {
+          if (meshRef.current) {
+            meshRef.current.scale.copy(originalScale);
+          }
+        }, 150);
+      }
     } else {
-      // Trigger shatter
+      // Final stage - trigger shatter
       onShatter();
     }
   };

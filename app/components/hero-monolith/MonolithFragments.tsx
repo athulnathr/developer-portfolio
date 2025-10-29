@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useEffect } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useRef, useEffect, useState } from "react";
+import { useFrame, ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 import { Fragment } from "@/app/lib/monolith/fracture";
 import { updateFragmentPhysics } from "@/app/lib/monolith/physics";
@@ -30,6 +30,10 @@ export default function MonolithFragments({
   const groupRef = useRef<THREE.Group>(null);
   const fragmentRefs = useRef<THREE.Mesh[]>([]);
   const lastTime = useRef(0);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const dragStartPos = useRef<THREE.Vector3>(new THREE.Vector3());
+  const dragStartTime = useRef<number>(0);
 
   useEffect(() => {
     fragmentRefs.current = fragmentRefs.current.slice(0, fragments.length);
@@ -87,6 +91,44 @@ export default function MonolithFragments({
     });
   });
 
+  const handlePointerDown = (e: ThreeEvent<PointerEvent>, index: number) => {
+    if (reassembling) return;
+    e.stopPropagation();
+    setDraggedIndex(index);
+    dragStartPos.current.copy(fragments[index].position);
+    dragStartTime.current = Date.now();
+  };
+
+  const handlePointerMove = (e: ThreeEvent<PointerEvent>, index: number) => {
+    if (draggedIndex !== index || reassembling) return;
+    e.stopPropagation();
+
+    // Update fragment position based on pointer movement
+    const fragment = fragments[index];
+    if (fragment && e.unprojectedPoint) {
+      fragment.position.copy(e.unprojectedPoint);
+    }
+  };
+
+  const handlePointerUp = (e: ThreeEvent<PointerEvent>, index: number) => {
+    if (draggedIndex !== index || reassembling) return;
+    e.stopPropagation();
+
+    const fragment = fragments[index];
+    const dragDuration = (Date.now() - dragStartTime.current) / 1000;
+
+    // Calculate velocity based on drag
+    if (dragDuration > 0) {
+      const displacement = fragment.position.clone().sub(dragStartPos.current);
+      const velocity = displacement
+        .divideScalar(dragDuration)
+        .multiplyScalar(0.5);
+      fragment.velocity.copy(velocity);
+    }
+
+    setDraggedIndex(null);
+  };
+
   if (!visible) return null;
 
   return (
@@ -100,12 +142,25 @@ export default function MonolithFragments({
           geometry={fragment.geometry}
           position={fragment.position.toArray()}
           rotation={fragment.rotation.toArray() as [number, number, number]}
-          scale={fragment.scale.toArray()}
+          scale={
+            hoveredIndex === index && !reassembling
+              ? [
+                  fragment.scale.x * 1.1,
+                  fragment.scale.y * 1.1,
+                  fragment.scale.z * 1.1,
+                ]
+              : fragment.scale.toArray()
+          }
           castShadow
           receiveShadow
+          onPointerDown={(e) => handlePointerDown(e, index)}
+          onPointerMove={(e) => handlePointerMove(e, index)}
+          onPointerUp={(e) => handlePointerUp(e, index)}
+          onPointerOver={() => !reassembling && setHoveredIndex(index)}
+          onPointerOut={() => setHoveredIndex(null)}
           onClick={() => {
-            // Mini shatter effect on click
-            if (!reassembling) {
+            // Mini shatter effect on click (fallback if not dragging)
+            if (!reassembling && draggedIndex === null) {
               fragment.velocity.y += 1;
               fragment.angularVelocity.set(
                 (Math.random() - 0.5) * 0.5,
@@ -122,7 +177,12 @@ export default function MonolithFragments({
               uTime: { value: 0 },
               uCrackProgress: { value: 0 },
               uBaseColor: { value: new THREE.Color(0x2a2a3e) },
-              uGlowColor: { value: new THREE.Color(0x6366f1) },
+              uGlowColor: {
+                value:
+                  hoveredIndex === index && !reassembling
+                    ? new THREE.Color(0x8b5cf6)
+                    : new THREE.Color(0x6366f1),
+              },
               uMetallic: { value: 0.8 },
               uRoughness: { value: 0.3 },
               uLightPosition: { value: lightPosition },

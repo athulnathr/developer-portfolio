@@ -135,10 +135,6 @@ export default function MonolithScene({
       onShatter();
     }
   };
-  console.log(
-    phase === "interactive" || phase === "complete",
-    'phase === "interactive" || phase === "complete"'
-  );
 
   return (
     <>
@@ -182,6 +178,7 @@ export default function MonolithScene({
             <Monolith
               crackStage={crackStage}
               onShatter={handleMonolithClick}
+              onCrackProgression={onCrackProgression}
               visible={true}
               position={monolithPosition}
               lightPosition={mousePosition}
