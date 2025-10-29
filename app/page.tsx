@@ -59,6 +59,7 @@ export default function Home() {
               showParticles={showParticles}
               transformationLevel={transformationLevel}
               onProjectHover={hoveredProject}
+              robotType="mechanical"
             />
           </Suspense>
         </ErrorBoundary>

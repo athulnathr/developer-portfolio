@@ -2,13 +2,13 @@
 
 import { useRef, useEffect, useState, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
-import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { SectionName } from "@/hooks/useScrollProgress";
 import { roboPositions } from "@/constants/animations";
 import {
   GESTURES,
   WALK_CYCLE,
+  RUN_CYCLE,
   TRANSFORMATION_STAGES,
   interpolateKeyframes,
   ANIMATION_TIMINGS,
@@ -17,6 +17,8 @@ import { HolographicSign } from "./HolographicSign";
 import { RoboFaceReveal } from "./RoboFaceReveal";
 import { TechBadges } from "./TechBadges";
 import { GeometricRobot } from "./GeometricRobot";
+import { CuteRobot } from "./CuteRobot";
+import { MechanicalRobot } from "./MechanicalRobot";
 import { content } from "@/constants/content";
 
 interface RoboModelProps {
@@ -28,6 +30,8 @@ interface RoboModelProps {
   transformationLevel?: number;
   onProjectHover?: number | null;
   scale?: number;
+  useRunAnimation?: boolean; // Use run instead of walk
+  robotType?: "cute" | "mechanical"; // Select robot type
 }
 
 export const RoboModel: React.FC<RoboModelProps> = ({
@@ -39,12 +43,26 @@ export const RoboModel: React.FC<RoboModelProps> = ({
   transformationLevel = 0,
   onProjectHover = null,
   scale = 1,
+  useRunAnimation = false,
+  robotType = "cute",
 }) => {
   const groupRef = useRef<THREE.Group>(null);
   const headRef = useRef<THREE.Object3D | null>(null);
   const leftArmRef = useRef<THREE.Object3D | null>(null);
   const rightArmRef = useRef<THREE.Object3D | null>(null);
   const bodyRef = useRef<THREE.Object3D | null>(null);
+  const leftLegRef = useRef<THREE.Group | null>(null);
+  const rightLegRef = useRef<THREE.Group | null>(null);
+  const leftKneeRef = useRef<THREE.Group | null>(null);
+  const rightKneeRef = useRef<THREE.Group | null>(null);
+
+  // Additional refs for MechanicalRobot
+  const torsoRef = useRef<THREE.Object3D | null>(null);
+  const waistRef = useRef<THREE.Object3D | null>(null);
+  const leftElbowRef = useRef<THREE.Object3D | null>(null);
+  const rightElbowRef = useRef<THREE.Object3D | null>(null);
+  const leftHandRef = useRef<THREE.Object3D | null>(null);
+  const rightHandRef = useRef<THREE.Object3D | null>(null);
 
   const [targetPosition, setTargetPosition] = useState(
     new THREE.Vector3(0, 0, 0)
@@ -52,32 +70,6 @@ export const RoboModel: React.FC<RoboModelProps> = ({
   const [targetScale, setTargetScale] = useState(1);
   const [walkProgress, setWalkProgress] = useState(0);
   const [heroAnimationTime, setHeroAnimationTime] = useState(0);
-
-  // Load the robot model
-  // Note: If model doesn't exist, we'll use the geometric fallback
-  // The parent ErrorBoundary will catch any critical failures
-  const { scene } = useGLTF("/models/robot.glb");
-
-  // Clone the scene to avoid issues with multiple instances
-  const clonedScene = useMemo(() => scene?.clone(), [scene]);
-
-  // Find important bones/objects in the model (if GLB loaded)
-  useEffect(() => {
-    if (!clonedScene) return;
-
-    clonedScene.traverse((child) => {
-      const name = child.name.toLowerCase();
-      if (name.includes("head")) {
-        headRef.current = child;
-      } else if (name.includes("leftarm") || name.includes("arm_l")) {
-        leftArmRef.current = child;
-      } else if (name.includes("rightarm") || name.includes("arm_r")) {
-        rightArmRef.current = child;
-      } else if (name.includes("body") || name.includes("torso")) {
-        bodyRef.current = child;
-      }
-    });
-  }, [clonedScene]);
 
   // Update target position based on current section
   useEffect(() => {
@@ -140,9 +132,14 @@ export const RoboModel: React.FC<RoboModelProps> = ({
           );
         }
 
-        // Walk cycle during stand up
-        setWalkProgress((prev) => prev + delta * WALK_CYCLE.speed);
-        applyWalkCycle(walkProgress);
+        // Walk/Run cycle during stand up
+        const cycleSpeed = useRunAnimation ? RUN_CYCLE.speed : WALK_CYCLE.speed;
+        setWalkProgress((prev) => prev + delta * cycleSpeed);
+        if (useRunAnimation) {
+          applyRunCycle(walkProgress);
+        } else {
+          applyWalkCycle(walkProgress);
+        }
       }
       // 4-5.5s: Wave gesture
       else if (
@@ -244,10 +241,118 @@ export const RoboModel: React.FC<RoboModelProps> = ({
         Math.sin(cycle * Math.PI * 2 + Math.PI) * WALK_CYCLE.armSwing;
     }
 
+    // Elbow bend during walk (for mechanical robot)
+    if (leftElbowRef.current && rightElbowRef.current) {
+      const leftElbowBend = Math.max(0, Math.sin(cycle * Math.PI * 2)) * 0.2;
+      const rightElbowBend =
+        Math.max(0, Math.sin(cycle * Math.PI * 2 + Math.PI)) * 0.2;
+      leftElbowRef.current.rotation.x = -leftElbowBend;
+      rightElbowRef.current.rotation.x = -rightElbowBend;
+    }
+
+    // Finger curl during walk (for mechanical robot)
+    if (leftHandRef.current && rightHandRef.current) {
+      const fingerCurl = Math.sin(cycle * Math.PI * 2) * 0.1;
+      leftHandRef.current.rotation.x = fingerCurl;
+      rightHandRef.current.rotation.x = fingerCurl;
+    }
+
+    // Torso counter-rotation for natural movement
+    if (torsoRef.current) {
+      const torsoTwist = Math.sin(cycle * Math.PI * 2) * 0.05;
+      torsoRef.current.rotation.y = torsoTwist;
+    }
+
+    // Animate legs if refs are available
+    if (leftLegRef.current && rightLegRef.current) {
+      // Hip swing - legs move opposite to each other
+      leftLegRef.current.rotation.x =
+        Math.sin(cycle * Math.PI * 2) * WALK_CYCLE.legSwing;
+      rightLegRef.current.rotation.x =
+        Math.sin(cycle * Math.PI * 2 + Math.PI) * WALK_CYCLE.legSwing;
+    }
+
+    // Knee bend - bend when leg is forward
+    if (leftKneeRef.current && rightKneeRef.current) {
+      const leftBend = Math.max(0, Math.sin(cycle * Math.PI * 2)) * 0.4;
+      const rightBend =
+        Math.max(0, Math.sin(cycle * Math.PI * 2 + Math.PI)) * 0.4;
+      leftKneeRef.current.rotation.x = -leftBend;
+      rightKneeRef.current.rotation.x = -rightBend;
+    }
+
     if (groupRef.current) {
       // Body bob
       const bob = Math.abs(Math.sin(cycle * Math.PI * 2)) * WALK_CYCLE.bodyBob;
       groupRef.current.position.y += bob;
+    }
+  }
+
+  function applyRunCycle(progress: number) {
+    const cycle = progress % 1;
+
+    if (leftArmRef.current && rightArmRef.current) {
+      // Arms pump more vigorously when running
+      leftArmRef.current.rotation.x =
+        Math.sin(cycle * Math.PI * 2) * RUN_CYCLE.armSwing;
+      rightArmRef.current.rotation.x =
+        Math.sin(cycle * Math.PI * 2 + Math.PI) * RUN_CYCLE.armSwing;
+    }
+
+    // Elbow bend during run - more pronounced
+    if (leftElbowRef.current && rightElbowRef.current) {
+      const leftElbowBend = Math.max(0, Math.sin(cycle * Math.PI * 2)) * 0.4;
+      const rightElbowBend =
+        Math.max(0, Math.sin(cycle * Math.PI * 2 + Math.PI)) * 0.4;
+      leftElbowRef.current.rotation.x = -leftElbowBend - 0.3;
+      rightElbowRef.current.rotation.x = -rightElbowBend - 0.3;
+    }
+
+    // Finger curl during run - tighter fists
+    if (leftHandRef.current && rightHandRef.current) {
+      const fingerCurl = Math.sin(cycle * Math.PI * 2) * 0.15;
+      leftHandRef.current.rotation.x = fingerCurl + 0.2;
+      rightHandRef.current.rotation.x = fingerCurl + 0.2;
+    }
+
+    // Torso counter-rotation - more dramatic for running
+    if (torsoRef.current) {
+      const torsoTwist = Math.sin(cycle * Math.PI * 2) * 0.1;
+      torsoRef.current.rotation.y = torsoTwist;
+    }
+
+    // Waist forward lean
+    if (waistRef.current) {
+      waistRef.current.rotation.x = 0.1;
+    }
+
+    // Animate legs with more exaggerated motion
+    if (leftLegRef.current && rightLegRef.current) {
+      // Hip swing - more dramatic for running
+      leftLegRef.current.rotation.x =
+        Math.sin(cycle * Math.PI * 2) * RUN_CYCLE.hipSwing;
+      rightLegRef.current.rotation.x =
+        Math.sin(cycle * Math.PI * 2 + Math.PI) * RUN_CYCLE.hipSwing;
+    }
+
+    // Knee bend - more pronounced when running
+    if (leftKneeRef.current && rightKneeRef.current) {
+      const leftBend =
+        Math.max(0, Math.sin(cycle * Math.PI * 2)) * RUN_CYCLE.kneeSwing;
+      const rightBend =
+        Math.max(0, Math.sin(cycle * Math.PI * 2 + Math.PI)) *
+        RUN_CYCLE.kneeSwing;
+      leftKneeRef.current.rotation.x = -leftBend;
+      rightKneeRef.current.rotation.x = -rightBend;
+    }
+
+    if (groupRef.current) {
+      // More body bob when running
+      const bob = Math.abs(Math.sin(cycle * Math.PI * 2)) * RUN_CYCLE.bodyBob;
+      groupRef.current.position.y += bob;
+
+      // Forward lean while running
+      groupRef.current.rotation.x = RUN_CYCLE.bodyTilt;
     }
   }
 
@@ -262,6 +367,18 @@ export const RoboModel: React.FC<RoboModelProps> = ({
         rightArmRef.current.rotation.z = waveRotation.z;
       }
     }
+
+    // Elbow bend for more realistic wave
+    if (rightElbowRef.current) {
+      const elbowBend = Math.sin(progress * Math.PI * 4) * 0.3 - 0.5;
+      rightElbowRef.current.rotation.x = elbowBend;
+    }
+
+    // Fingers open/close during wave
+    if (rightHandRef.current) {
+      const fingerExtension = Math.sin(progress * Math.PI * 4) * 0.3;
+      rightHandRef.current.rotation.x = fingerExtension;
+    }
   }
 
   function applyThumbsUpGesture(time: number) {
@@ -269,6 +386,17 @@ export const RoboModel: React.FC<RoboModelProps> = ({
       const gesture = Math.sin(time * 2) * 0.5;
       rightArmRef.current.rotation.x = -1 + gesture * 0.2;
       rightArmRef.current.rotation.z = 0.3;
+    }
+
+    // Elbow angle for thumbs up pose
+    if (rightElbowRef.current) {
+      rightElbowRef.current.rotation.x = -0.8;
+    }
+
+    // Thumb extended, other fingers curled
+    if (rightHandRef.current) {
+      rightHandRef.current.rotation.x = 0.5; // Fingers curled
+      rightHandRef.current.rotation.z = -0.2; // Thumb out
     }
   }
 
@@ -283,34 +411,51 @@ export const RoboModel: React.FC<RoboModelProps> = ({
       bodyRef.current.scale.y =
         1 + Math.sin(time * ANIMATION_TIMINGS.BREATHING_SPEED) * 0.02;
     }
+
+    // Torso expansion/contraction
+    if (torsoRef.current) {
+      const torsoBreathing =
+        Math.sin(time * ANIMATION_TIMINGS.BREATHING_SPEED) * 0.015;
+      torsoRef.current.scale.x = 1 + torsoBreathing;
+      torsoRef.current.scale.z = 1 + torsoBreathing;
+    }
+
+    // Waist slight rotation
+    if (waistRef.current) {
+      const waistRotation =
+        Math.sin(time * ANIMATION_TIMINGS.BREATHING_SPEED * 0.5) * 0.02;
+      waistRef.current.rotation.y = waistRotation;
+    }
   }
 
   function applyTransformationEffects(level: number, time: number) {
-    const stages = Object.values(TRANSFORMATION_STAGES);
-    const stage = stages[Math.min(level, stages.length - 1)];
-
-    // Apply glow effect (only if GLB model loaded)
-    if (clonedScene) {
-      clonedScene.traverse((child) => {
-        if ((child as THREE.Mesh).isMesh) {
-          const mesh = child as THREE.Mesh;
-          if (mesh.material && "emissive" in mesh.material) {
-            const material = mesh.material as THREE.MeshStandardMaterial;
-            const glowIntensity = 0.5 + Math.sin(time * 4) * 0.3;
-            material.emissiveIntensity =
-              glowIntensity * stage.emissiveIntensity;
-            if ("glowColor" in stage && stage.glowColor) {
-              material.emissive = stage.glowColor;
-            }
-          }
-        }
-      });
-    }
-
     // Excited bounce during absorption
     if (groupRef.current && level > 0) {
       const bounce = Math.abs(Math.sin(time * 5)) * 0.1;
       groupRef.current.position.y += bounce;
+
+      // Add slight rotation during transformation
+      const rotation = Math.sin(time * 2) * 0.05;
+      groupRef.current.rotation.y += rotation;
+    }
+
+    // Torso rotation during transformation
+    if (torsoRef.current && level > 0) {
+      const torsoSpin = Math.sin(time * 3) * 0.15 * level;
+      torsoRef.current.rotation.y = torsoSpin;
+    }
+
+    // Waist rotation pulse
+    if (waistRef.current && level > 0) {
+      const waistPulse = Math.sin(time * 4) * 0.1 * level;
+      waistRef.current.rotation.y = waistPulse;
+    }
+
+    // Mechanical details pulse - hands flex
+    if (leftHandRef.current && rightHandRef.current && level > 0) {
+      const handPulse = Math.sin(time * 6) * 0.2;
+      leftHandRef.current.rotation.x = handPulse;
+      rightHandRef.current.rotation.x = handPulse;
     }
   }
 
@@ -332,21 +477,49 @@ export const RoboModel: React.FC<RoboModelProps> = ({
 
   return (
     <group ref={groupRef}>
-      {/* Render GLB model or geometric fallback */}
-      {clonedScene ? (
-        <primitive object={clonedScene} />
+      {/* Conditionally render robot based on type */}
+      {robotType === "mechanical" ? (
+        <MechanicalRobot
+          headRef={headRef}
+          torsoRef={torsoRef}
+          waistRef={waistRef}
+          leftArmRef={leftArmRef}
+          rightArmRef={rightArmRef}
+          leftElbowRef={leftElbowRef}
+          rightElbowRef={rightElbowRef}
+          leftHandRef={leftHandRef}
+          rightHandRef={rightHandRef}
+          bodyRef={bodyRef}
+          leftLegRef={leftLegRef}
+          rightLegRef={rightLegRef}
+          leftKneeRef={leftKneeRef}
+          rightKneeRef={rightKneeRef}
+        />
       ) : (
-        <GeometricRobot
+        <CuteRobot
           headRef={headRef}
           leftArmRef={leftArmRef}
           rightArmRef={rightArmRef}
           bodyRef={bodyRef}
+          leftLegRef={leftLegRef}
+          rightLegRef={rightLegRef}
+          leftKneeRef={leftKneeRef}
+          rightKneeRef={rightKneeRef}
         />
       )}
 
       {/* Additional lighting for the robot */}
-      <pointLight position={[2, 2, 2]} intensity={0.5} color="#00d9ff" />
-      <pointLight position={[-2, 2, 2]} intensity={0.3} color="#ff00ff" />
+      {robotType === "mechanical" ? (
+        <>
+          <pointLight position={[2, 2, 2]} intensity={0.6} color="#ff6600" />
+          <pointLight position={[-2, 2, 2]} intensity={0.4} color="#ff8800" />
+        </>
+      ) : (
+        <>
+          <pointLight position={[2, 2, 2]} intensity={0.5} color="#00d9ff" />
+          <pointLight position={[-2, 2, 2]} intensity={0.3} color="#ff00ff" />
+        </>
+      )}
 
       {/* Dynamic transformation glow */}
       {currentSection === "skills" &&
@@ -385,6 +558,3 @@ export const RoboModel: React.FC<RoboModelProps> = ({
     </group>
   );
 };
-
-// Preload the model
-useGLTF.preload("/models/robot.glb");

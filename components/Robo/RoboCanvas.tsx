@@ -15,6 +15,7 @@ interface RoboCanvasProps {
   showParticles?: boolean;
   transformationLevel?: number;
   onProjectHover?: number | null;
+  robotType?: "cute" | "mechanical";
 }
 
 export const RoboCanvas: React.FC<RoboCanvasProps> = ({
@@ -24,6 +25,7 @@ export const RoboCanvas: React.FC<RoboCanvasProps> = ({
   showParticles = false,
   transformationLevel = 0,
   onProjectHover = null,
+  robotType = "cute",
 }) => {
   const [isClient, setIsClient] = useState(false);
 
@@ -75,6 +77,7 @@ export const RoboCanvas: React.FC<RoboCanvasProps> = ({
             cursorPosition={cursorPosition}
             transformationLevel={transformationLevel}
             onProjectHover={onProjectHover}
+            robotType={robotType}
           />
 
           {/* Particle Effects */}

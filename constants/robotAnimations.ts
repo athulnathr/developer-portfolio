@@ -115,6 +115,17 @@ export const WALK_CYCLE = {
     armSwing: 0.3, // Arm movement
 };
 
+// Run cycle animation - faster and more exaggerated
+export const RUN_CYCLE = {
+    hipSwing: 0.8, // Hip rotation forward/back
+    kneeSwing: 1.2, // Knee bend amount
+    bodyBob: 0.15, // Vertical body movement (more than walk)
+    bodyTilt: 0.15, // Forward lean while running
+    speed: 8, // Steps per second (2x walk speed)
+    armSwing: 0.6, // Arm pumping (2x walk)
+    armBend: 0.3, // Arms bend more at elbow when running
+};
+
 // Robot transformation stages (Skills section)
 export const TRANSFORMATION_STAGES = {
     base: {
