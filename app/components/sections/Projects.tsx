@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { useScrollAnimation } from "@/app/lib/hooks/useScrollAnimation";
 import ProjectCard from "../projects/ProjectCard";
 
@@ -69,11 +69,28 @@ function AmbientParticles() {
 
 export default function Projects() {
   const { ref, inView } = useScrollAnimation({ threshold: 0.1 });
+  const sectionRef = useRef<HTMLElement>(null);
+
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "end start"],
+  });
+
+  const y = useTransform(scrollYProgress, [0, 1], [80, -80]);
+  const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0]);
 
   return (
     <section
       id="projects"
-      ref={ref}
+      ref={(node) => {
+        // Combine refs
+        if (typeof ref === "function") {
+          ref(node);
+        } else if (ref) {
+          (ref as any).current = node;
+        }
+        (sectionRef as any).current = node;
+      }}
       className="relative min-h-screen py-20 md:py-32 bg-black overflow-hidden"
     >
       {/* Geometric fragments background */}
@@ -90,7 +107,10 @@ export default function Projects() {
       <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
       <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <motion.div
+        className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+        style={{ y, opacity }}
+      >
         {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 50 }}
@@ -132,7 +152,7 @@ export default function Projects() {
             More exciting projects coming soon...
           </p>
         </motion.div>
-      </div>
+      </motion.div>
     </section>
   );
 }

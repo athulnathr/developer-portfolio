@@ -1,90 +1,66 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
 
 interface TextSequenceProps {
   active: boolean;
-  textIndex: number; // -1 = none, 0, 1, 2 = which texts to show
-  onComplete: () => void;
+  textIndex: number; // -1 = none, 0, 1, 2 = which text to show
+  onComplete?: () => void; // Optional, not used anymore
 }
 
 const texts = [
-  { text: "Create experiences.", delay: 0 },
-  { text: "Do storytell.", delay: 1.5 },
-  { text: "I am Athul Nath.", delay: 3, isMain: true },
+  { text: "create experiences", isMain: false },
+  { text: "do storytelling", isMain: false },
+  { text: "am Athul Nath", isMain: true },
 ];
 
-export default function TextSequence({
-  active,
-  textIndex,
-  onComplete,
-}: TextSequenceProps) {
-  useEffect(() => {
-    // When all texts are shown (textIndex 2), trigger completion after delay
-    if (active && textIndex === 2) {
-      const timer = setTimeout(() => {
-        onComplete();
-      }, 2000);
+export default function TextSequence({ active, textIndex }: TextSequenceProps) {
+  if (!active || textIndex < 0) return null;
 
-      return () => clearTimeout(timer);
-    }
-  }, [active, textIndex, onComplete]);
+  const currentText = texts[textIndex];
 
   return (
-    <div className="absolute inset-0 z-20 pointer-events-none">
-      <div className="absolute top-1/2 left-[15%] -translate-y-1/2 max-w-4xl flex flex-col items-start">
-        {texts.map((item, index) => {
-          // Only show texts up to textIndex
-          if (index > textIndex) return null;
-
-          return (
-            <div
-              key={index}
-              className={`mb-8 ${
-                item.isMain
-                  ? "text-7xl md:text-9xl font-bold"
-                  : "text-5xl md:text-6xl font-light"
-              }`}
-              style={{
-                opacity: 1,
-              }}
-            >
-              {item.text.split("").map((char, charIndex) => (
-                <span
-                  key={charIndex}
-                  className={
-                    item.isMain
-                      ? "inline-block text-white drop-shadow-[0_0_30px_rgba(99,102,241,0.8)]"
-                      : "inline-block text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.5)]"
-                  }
-                  style={{
-                    animation: `fadeInUp 0.5s ease forwards ${
-                      charIndex * 0.03
-                    }s`,
-                    opacity: 0,
-                  }}
-                >
-                  {char === " " ? "\u00A0" : char}
-                </span>
-              ))}
-            </div>
-          );
-        })}
-      </div>
-
-      <style jsx>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
+    <div className="absolute inset-0 z-30 pointer-events-none">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={textIndex}
+          initial={{ opacity: 0, x: "100vw" }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: "-30vw" }}
+          transition={{
+            x: { type: "spring", stiffness: 50, damping: 20, mass: 1 },
+            opacity: { duration: 0.4 },
+          }}
+          className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-[10%] w-[90vw] sm:w-[70vw] md:w-[60vw] lg:w-[50vw]"
+        >
+          <div
+            className={`${
+              currentText.isMain
+                ? "text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold"
+                : "text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light"
+            } text-white leading-tight`}
+          >
+            {currentText.text.split("").map((char, charIndex) => (
+              <motion.span
+                key={charIndex}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  delay: 0.3 + charIndex * 0.03,
+                  duration: 0.3,
+                }}
+                className={
+                  currentText.isMain
+                    ? "inline-block drop-shadow-[0_0_30px_rgba(99,102,241,0.8)]"
+                    : "inline-block drop-shadow-[0_0_20px_rgba(255,255,255,0.5)]"
+                }
+              >
+                {char === " " ? "\u00A0" : char}
+              </motion.span>
+            ))}
+          </div>
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }
