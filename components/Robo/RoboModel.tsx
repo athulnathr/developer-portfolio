@@ -71,9 +71,10 @@ export const RoboModel: React.FC<RoboModelProps> = ({
   const [walkProgress, setWalkProgress] = useState(0);
   const [heroAnimationTime, setHeroAnimationTime] = useState(0);
 
-  // Update target position based on current section
+  // Update target position and rotation based on current section (Robot-Centric)
   useEffect(() => {
     const pos = roboPositions[currentSection];
+    // Robot stays at origin, only Y position changes slightly
     setTargetPosition(new THREE.Vector3(pos.x, pos.y, pos.z));
 
     // Apply transformation level in skills section
@@ -92,69 +93,39 @@ export const RoboModel: React.FC<RoboModelProps> = ({
 
     const time = state.clock.elapsedTime;
 
-    // === HERO SECTION SEQUENCE ===
+    // === HERO SECTION SEQUENCE (Robot-Centric) ===
     if (currentSection === "hero") {
-      setHeroAnimationTime((prev) => prev + delta);
-
-      // 0-2s: Sitting
-      if (heroAnimationTime < ANIMATION_TIMINGS.STAND_UP_DURATION) {
-        const sitPose = interpolateKeyframes(
-          GESTURES.sit.keyframes as unknown as any[],
-          0,
-          "position"
+      // 0-0.3: Materialize animation
+      if (sectionProgress < 0.3) {
+        const materializeProgress = sectionProgress / 0.3;
+        const materializePose = interpolateKeyframes(
+          GESTURES.materialize.keyframes as unknown as any[],
+          materializeProgress,
+          "scale"
         );
-        if (sitPose) {
-          groupRef.current.position.set(
-            targetPosition.x,
-            targetPosition.y + sitPose.y,
-            targetPosition.z
-          );
+        if (materializePose !== null) {
+          const scaleValue =
+            typeof materializePose === "number" ? materializePose : 1;
+          groupRef.current.scale.set(scaleValue, scaleValue, scaleValue);
         }
       }
-      // 2-4s: Standing up
-      else if (
-        heroAnimationTime <
-        ANIMATION_TIMINGS.STAND_UP_DURATION + ANIMATION_TIMINGS.WALK_IN_DURATION
-      ) {
-        const progress =
-          (heroAnimationTime - ANIMATION_TIMINGS.STAND_UP_DURATION) /
-          ANIMATION_TIMINGS.STAND_UP_DURATION;
-        const standUpPose = interpolateKeyframes(
-          GESTURES.standUp.keyframes as unknown as any[],
-          progress,
-          "position"
-        );
-        if (standUpPose) {
-          groupRef.current.position.set(
-            targetPosition.x,
-            targetPosition.y + standUpPose.y,
-            targetPosition.z
-          );
-        }
 
-        // Walk/Run cycle during stand up
-        const cycleSpeed = useRunAnimation ? RUN_CYCLE.speed : WALK_CYCLE.speed;
-        setWalkProgress((prev) => prev + delta * cycleSpeed);
-        if (useRunAnimation) {
-          applyRunCycle(walkProgress);
-        } else {
-          applyWalkCycle(walkProgress);
-        }
+      // 0.3-1.0: Sitting with breathing and cursor tracking
+      const sitPose = interpolateKeyframes(
+        GESTURES.sit.keyframes as unknown as any[],
+        0,
+        "position"
+      );
+      if (sitPose) {
+        groupRef.current.position.set(
+          targetPosition.x,
+          targetPosition.y + sitPose.y,
+          targetPosition.z
+        );
       }
-      // 4-5.5s: Wave gesture
-      else if (
-        heroAnimationTime <
-        ANIMATION_TIMINGS.WAVE_START_TIME + ANIMATION_TIMINGS.WAVE_DURATION
-      ) {
-        const waveProgress =
-          (heroAnimationTime - ANIMATION_TIMINGS.WAVE_START_TIME) /
-          ANIMATION_TIMINGS.WAVE_DURATION;
-        applyWaveGesture(waveProgress);
-      }
-      // After: Idle with breathing
-      else {
-        applyBreathingAnimation(time);
-      }
+
+      // Breathing animation while sitting
+      applyBreathingAnimation(time);
     }
 
     // === SMOOTH POSITION TRANSITIONS ===
@@ -184,34 +155,78 @@ export const RoboModel: React.FC<RoboModelProps> = ({
       );
     }
 
-    // === SECTION-SPECIFIC ANIMATIONS ===
+    // === SECTION-SPECIFIC ANIMATIONS (Robot-Centric) ===
     switch (currentSection) {
       case "about":
-        // Gentle bounce when settled
-        if (sectionProgress > 0.2) {
+        // Stand up and turn to face camera (left)
+        if (sectionProgress < 0.3) {
+          const standProgress = sectionProgress / 0.3;
+          const standUpPose = interpolateKeyframes(
+            GESTURES.standUp.keyframes as unknown as any[],
+            standProgress,
+            "position"
+          );
+          if (standUpPose) {
+            groupRef.current.position.y = targetPosition.y + standUpPose.y;
+          }
+        } else {
+          // Standing idle with gentle sway
           groupRef.current.position.y =
-            targetPosition.y + Math.sin(time * 3) * 0.05;
+            targetPosition.y + Math.sin(time * 2) * 0.03;
         }
+
+        // Rotate to face left (where camera is)
+        const targetRotation = roboPositions.about.rotation;
+        groupRef.current.rotation.y = THREE.MathUtils.lerp(
+          groupRef.current.rotation.y,
+          targetRotation,
+          delta * 2
+        );
+        applyBreathingAnimation(time);
         break;
 
       case "skills":
-        // Apply transformation effects
+        // Face forward, apply transformation effects
+        groupRef.current.rotation.y = THREE.MathUtils.lerp(
+          groupRef.current.rotation.y,
+          0,
+          delta * 2
+        );
         applyTransformationEffects(transformationLevel, time);
         break;
 
       case "projects":
-        // Mature confident pose
-        groupRef.current.rotation.y = Math.sin(time * 0.3) * 0.1;
+        // Turn to face right (where camera is)
+        const projectsRotation = roboPositions.projects.rotation;
+        groupRef.current.rotation.y = THREE.MathUtils.lerp(
+          groupRef.current.rotation.y,
+          projectsRotation,
+          delta * 2
+        );
 
         // React to project hover
         if (onProjectHover !== null) {
           applyThumbsUpGesture(time);
+        } else {
+          applyBreathingAnimation(time);
         }
         break;
 
       case "contact":
-        // Welcoming idle
-        applyBreathingAnimation(time);
+        // Face forward
+        groupRef.current.rotation.y = THREE.MathUtils.lerp(
+          groupRef.current.rotation.y,
+          0,
+          delta * 2
+        );
+
+        // Wave gesture at start, then idle
+        if (sectionProgress < 0.3) {
+          const waveProgress = sectionProgress / 0.3;
+          applyWaveGesture(waveProgress);
+        } else {
+          applyBreathingAnimation(time);
+        }
         break;
 
       case "footer":

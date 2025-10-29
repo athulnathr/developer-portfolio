@@ -4,9 +4,12 @@ import { Canvas } from "@react-three/fiber";
 import { Suspense, useEffect, useState } from "react";
 import { RoboModel } from "./RoboModel";
 import { ParticleSystem } from "./ParticleSystem";
-import { TechGrid } from "../effects/TechGrid";
+import { HeroEnvironment } from "../effects/HeroEnvironment";
+import { OrbitalCameraController } from "./OrbitalCameraController";
+import { SectionStations } from "./SectionStations";
+import { Chair } from "./Chair";
 import { SectionName } from "@/hooks/useScrollProgress";
-import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
+import { PerspectiveCamera } from "@react-three/drei";
 
 interface RoboCanvasProps {
   currentSection: SectionName;
@@ -16,6 +19,7 @@ interface RoboCanvasProps {
   transformationLevel?: number;
   onProjectHover?: number | null;
   robotType?: "cute" | "mechanical";
+  isInitialLoad?: boolean;
 }
 
 export const RoboCanvas: React.FC<RoboCanvasProps> = ({
@@ -26,6 +30,7 @@ export const RoboCanvas: React.FC<RoboCanvasProps> = ({
   transformationLevel = 0,
   onProjectHover = null,
   robotType = "cute",
+  isInitialLoad = false,
 }) => {
   const [isClient, setIsClient] = useState(false);
 
@@ -62,13 +67,26 @@ export const RoboCanvas: React.FC<RoboCanvasProps> = ({
           <directionalLight position={[10, 10, 5]} intensity={1} />
           <directionalLight position={[-10, -10, -5]} intensity={0.3} />
 
-          {/* Camera */}
-          <PerspectiveCamera makeDefault position={[0, 0, 8]} fov={50} />
+          {/* Camera with Orbital Controller */}
+          <PerspectiveCamera makeDefault position={[0, 1.5, 12]} fov={50} />
+          <OrbitalCameraController
+            currentSection={currentSection}
+            sectionProgress={sectionProgress}
+            cursorPosition={cursorPosition}
+            isInitialLoad={isInitialLoad}
+          />
 
-          {/* Background Tech Grid (Hero section) */}
-          {currentSection === "hero" && (
-            <TechGrid size={20} divisions={20} color="#00d9ff" opacity={0.15} />
-          )}
+          {/* Hero Environment (always visible) */}
+          <HeroEnvironment />
+
+          {/* Chair (visible in hero section) */}
+          {currentSection === "hero" && <Chair />}
+
+          {/* Section Stations */}
+          <SectionStations
+            currentSection={currentSection}
+            sectionProgress={sectionProgress}
+          />
 
           {/* Robot */}
           <RoboModel

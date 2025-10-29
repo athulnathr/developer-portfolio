@@ -68,10 +68,19 @@ export const GESTURES = {
 
     sit: {
         keyframes: [
-            { time: 0, position: { x: 0, y: -0.8, z: 0 }, rotation: { x: 0.3, y: 0, z: 0 } },
-            { time: 1, position: { x: 0, y: -0.8, z: 0 }, rotation: { x: 0.3, y: 0, z: 0 } },
+            { time: 0, position: { x: 0, y: -0.5, z: 0 }, rotation: { x: 0, y: 0, z: 0 } },
+            { time: 1, position: { x: 0, y: -0.5, z: 0 }, rotation: { x: 0, y: 0, z: 0 } },
         ],
         duration: 0.1,
+    },
+
+    materialize: {
+        keyframes: [
+            { time: 0, scale: 0, opacity: 0 },
+            { time: 0.5, scale: 0.5, opacity: 0.5 },
+            { time: 1, scale: 1, opacity: 1 },
+        ],
+        duration: 1.5,
     },
 
     standUp: {

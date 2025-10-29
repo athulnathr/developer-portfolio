@@ -79,13 +79,13 @@ export const animationConfig = {
     },
 };
 
-// Section positions for Robo
+// Section positions for Robo (Robot-Centric: stays at origin)
 export const roboPositions = {
-    hero: { x: 0, y: 0, z: 0, scale: 1 },
-    about: { x: -3, y: 0, z: 0, scale: 1 },
-    skills: { x: 0, y: 0, z: 1, scale: 1 },
-    projects: { x: 2, y: 0.5, z: 0, scale: 1.3 },
-    contact: { x: -2, y: 0, z: 0, scale: 1 },
-    footer: { x: 0, y: -1, z: 0, scale: 0.8 },
+    hero: { x: 0, y: 0.5, z: 0, scale: 1, rotation: 0 }, // Sitting on chair
+    about: { x: 0, y: 0, z: 0, scale: 1, rotation: -Math.PI / 4 }, // Turned left
+    skills: { x: 0, y: 0, z: 0, scale: 1, rotation: 0 }, // Facing forward
+    projects: { x: 0, y: 0, z: 0, scale: 1, rotation: Math.PI / 4 }, // Turned right
+    contact: { x: 0, y: 0, z: 0, scale: 1, rotation: 0 }, // Facing forward
+    footer: { x: 0, y: -0.5, z: 0, scale: 0.8, rotation: 0 }, // Powered down
 };
 
