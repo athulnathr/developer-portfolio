@@ -17,8 +17,8 @@ export function ImportedRoom(props: any): JSX.Element {
     <group
       {...props}
       dispose={null}
-      rotation={[0, -Math.PI / 2.95, 0]}
-      scale={1.95}
+      rotation={[0, -Math.PI / 3.5, 0]}
+      scale={2}
       position={[0, 0, 2]}
     >
       <group rotation={[-Math.PI / 2, 0, 0]} scale={0.6}>
