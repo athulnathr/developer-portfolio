@@ -59,24 +59,24 @@ export default function About() {
           initial={{ opacity: 0, y: 50 }}
           animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-16 md:mb-24"
+          className="mb-16 md:mb-24 text-center"
         >
           <h2 className="text-5xl md:text-7xl font-bold mb-6">
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-400">
               About Me
             </span>
           </h2>
-          <div className="h-1 w-24 bg-gradient-to-r from-indigo-500 to-purple-500" />
+          <div className="h-1 w-24 bg-gradient-to-r from-indigo-500 to-purple-500 mx-auto" />
         </motion.div>
 
         {/* Personality Statement */}
         <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
+          initial={{ opacity: 0, y: 30 }}
+          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
           transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-20 md:mb-32"
+          className="mb-20 md:mb-32 text-center"
         >
-          <p className="text-2xl md:text-4xl font-light text-zinc-300 leading-relaxed max-w-4xl">
+          <p className="text-2xl md:text-4xl font-light text-zinc-300 leading-relaxed max-w-4xl mx-auto">
             I craft{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 font-medium">
               interactive digital experiences
@@ -97,12 +97,12 @@ export default function About() {
           initial={{ opacity: 0, y: 30 }}
           animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
           transition={{ duration: 0.8, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-20 md:mb-32"
+          className="mb-20 md:mb-32 text-center"
         >
           <h3 className="text-2xl md:text-3xl font-semibold text-white mb-8">
             Tech Arsenal
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6 max-w-4xl mx-auto">
             {skills.map((skill, index) => (
               <SkillCard
                 key={skill.name}
@@ -119,16 +119,17 @@ export default function About() {
           initial={{ opacity: 0, y: 30 }}
           animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
           transition={{ duration: 0.8, delay: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="text-center"
         >
           <h3 className="text-2xl md:text-3xl font-semibold text-white mb-8">
             Journey
           </h3>
-          <div className="space-y-6">
+          <div className="space-y-6 max-w-3xl mx-auto">
             {storyFragments.map((fragment, index) => (
               <motion.div
                 key={fragment.year}
-                initial={{ opacity: 0, x: -30 }}
-                whileInView={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.5 }}
                 transition={{
                   duration: 0.6,
@@ -137,7 +138,7 @@ export default function About() {
                 }}
                 className="group relative"
               >
-                <div className="flex items-start gap-6 p-6 rounded-xl border border-zinc-800 bg-zinc-900/30 backdrop-blur-sm transition-all duration-300 hover:border-indigo-500/50 hover:bg-zinc-900/50">
+                <div className="flex items-start gap-6 p-6 rounded-xl border border-zinc-800 bg-zinc-900/30 backdrop-blur-sm transition-all duration-300 hover:border-indigo-500/50 hover:bg-zinc-900/50 text-left">
                   {/* Year badge */}
                   <div className="flex-shrink-0 w-16 h-16 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
                     <span className="text-sm font-bold text-white">

@@ -106,7 +106,11 @@ export default function Contact() {
             animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
             transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
           >
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-6"
+              suppressHydrationWarning
+            >
               {/* Name Field */}
               <div className="relative">
                 <label
@@ -126,6 +130,7 @@ export default function Contact() {
                   required
                   className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-all duration-300"
                   placeholder="Your name"
+                  suppressHydrationWarning
                 />
                 {focusedField === "name" && (
                   <motion.div
@@ -157,6 +162,7 @@ export default function Contact() {
                   required
                   className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-all duration-300"
                   placeholder="your@email.com"
+                  suppressHydrationWarning
                 />
                 {focusedField === "email" && (
                   <motion.div
@@ -188,6 +194,7 @@ export default function Contact() {
                   rows={6}
                   className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-all duration-300 resize-none"
                   placeholder="Tell me about your project..."
+                  suppressHydrationWarning
                 />
                 {focusedField === "message" && (
                   <motion.div
@@ -206,6 +213,7 @@ export default function Contact() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="relative w-full px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg text-white font-semibold overflow-hidden group"
+                suppressHydrationWarning
               >
                 <span className="relative z-10">Send Message</span>
                 {/* Pulse effect */}
