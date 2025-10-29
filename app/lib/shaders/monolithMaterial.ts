@@ -6,11 +6,13 @@
 export const monolithVertexShader = `
   varying vec3 vNormal;
   varying vec3 vPosition;
+  varying vec3 vWorldPosition;
   varying vec2 vUv;
   
   void main() {
     vNormal = normalize(normalMatrix * normal);
     vPosition = position;
+    vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
     vUv = uv;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
@@ -27,6 +29,7 @@ export const monolithFragmentShader = `
   
   varying vec3 vNormal;
   varying vec3 vPosition;
+  varying vec3 vWorldPosition;
   varying vec2 vUv;
   
   // Fracture noise
@@ -54,14 +57,14 @@ export const monolithFragmentShader = `
   
   void main() {
     vec3 normal = normalize(vNormal);
-    vec3 lightDir = normalize(uLightPosition - vPosition);
+    vec3 lightDir = normalize(uLightPosition - vWorldPosition);
     
     // Lighting calculations
     float diff = max(dot(normal, lightDir), 0.0);
-    float ambient = 0.3;
+    float ambient = 0.6;
     
     // Fresnel effect
-    vec3 viewDir = normalize(cameraPosition - vPosition);
+    vec3 viewDir = normalize(cameraPosition - vWorldPosition);
     float fresnel = pow(1.0 - max(dot(viewDir, normal), 0.0), 3.0);
     
     // Base color
@@ -78,8 +81,8 @@ export const monolithFragmentShader = `
     // Apply lighting
     vec3 finalColor = color * (ambient + diff * 0.7);
     
-    // Add edge glow
-    finalColor += fresnel * uGlowColor * 0.2;
+    // Add edge glow (increased for better visibility)
+    finalColor += fresnel * uGlowColor * 0.4;
     
     // Tech grid overlay
     float grid = step(0.98, fract(vUv.y * 50.0));

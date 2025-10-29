@@ -42,7 +42,6 @@ export default function MonolithScene({
   const [isMobile, setIsMobile] = useState(false);
   const [particleCount, setParticleCount] = useState(100);
   const shadowPosition = useRef(new THREE.Vector3(0, -2, 0));
-
   // Detect mobile on mount
   useEffect(() => {
     setIsMobile(isMobileDevice());
@@ -136,11 +135,18 @@ export default function MonolithScene({
       onShatter();
     }
   };
+  console.log(
+    phase === "interactive" || phase === "complete",
+    'phase === "interactive" || phase === "complete"'
+  );
 
   return (
     <>
       <Canvas
         camera={{ position: [0, 2, 10], fov: 50 }}
+        onCreated={({ camera }) => {
+          camera.lookAt(0, 2, 0);
+        }}
         shadows={!isMobile}
         gl={{
           antialias: !isMobile,

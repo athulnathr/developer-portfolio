@@ -8,11 +8,6 @@ import {
   getFracturePoints,
 } from "@/app/lib/monolith/geometry";
 import { calculateCrackLines } from "@/app/lib/monolith/fracture";
-import {
-  monolithVertexShader,
-  monolithFragmentShader,
-} from "@/app/lib/shaders/monolithMaterial";
-
 interface MonolithProps {
   crackStage: number;
   onShatter: () => void;
@@ -25,7 +20,7 @@ export default function Monolith({
   crackStage,
   onShatter,
   visible,
-  position = [0, 0, 0],
+  position = [0, 2, 0],
   lightPosition,
 }: MonolithProps) {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -87,15 +82,6 @@ export default function Monolith({
 
   useFrame((state) => {
     if (meshRef.current && visible) {
-      const material = meshRef.current.material as THREE.ShaderMaterial;
-      material.uniforms.uTime.value = state.clock.elapsedTime;
-      material.uniforms.uCrackProgress.value = THREE.MathUtils.lerp(
-        material.uniforms.uCrackProgress.value,
-        crackStage / 3,
-        0.1
-      );
-      material.uniforms.uLightPosition.value.copy(lightPosition);
-
       // Subtle idle animation
       meshRef.current.rotation.y =
         Math.sin(state.clock.elapsedTime * 0.2) * 0.02;
@@ -124,14 +110,18 @@ export default function Monolith({
       ref={meshRef}
       geometry={geometry}
       position={position}
+      scale={[1, 1, 1]}
       onClick={handleClick}
       castShadow
       receiveShadow
+      name="monolith"
     >
-      <shaderMaterial
-        vertexShader={monolithVertexShader}
-        fragmentShader={monolithFragmentShader}
-        uniforms={uniforms}
+      <meshStandardMaterial
+        color="#6366f1"
+        emissive="#4f46e5"
+        emissiveIntensity={0.3}
+        metalness={0.9}
+        roughness={0.1}
       />
     </mesh>
   );

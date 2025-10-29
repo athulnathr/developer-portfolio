@@ -29,7 +29,7 @@ export default function HeroMonolith() {
   const [hovering, setHovering] = useState(false);
   const [monolithPosition, setMonolithPosition] = useState<
     [number, number, number]
-  >([0, 0, 0]);
+  >([0, 2, 0]);
   const { shake } = useScreenShake();
 
   // Lock scroll on mount
@@ -78,7 +78,7 @@ export default function HeroMonolith() {
   const handleReassembleComplete = useCallback(() => {
     setPhase("text-sequence");
     // Shift monolith to left
-    setMonolithPosition([-3, 0, 0]);
+    setMonolithPosition([-3, 2, 0]);
   }, []);
 
   // Handle text sequence complete

@@ -21,37 +21,33 @@ export function createMonolithGeometry(options: MonolithGeometryOptions = {}) {
         height = 4,
         width = 1.2,
         depth = 0.8,
-        segments = 32
+        segments = 4
     } = options;
 
-    // Create the main vertical beam (the shaft of the "I")
-    const mainBeam = new THREE.BoxGeometry(width * 0.4, height, depth * 0.5, segments, segments * 2, segments);
-
-    // Create top cap
-    const topCap = new THREE.BoxGeometry(width, height * 0.15, depth, segments, 4, segments);
-
-    // Create bottom cap
-    const bottomCap = new THREE.BoxGeometry(width, height * 0.15, depth, segments, 4, segments);
-
-    // Merge geometries
+    // Create the "I" shaped monolith using THREE.js BufferGeometryUtils
     const geometries: THREE.BufferGeometry[] = [];
 
-    // Main beam at center
+    // Main vertical beam (the shaft of the "I")
+    const mainBeam = new THREE.BoxGeometry(width * 0.4, height, depth * 0.5, segments, segments * 2, segments);
     geometries.push(mainBeam);
 
     // Top cap
+    const topCap = new THREE.BoxGeometry(width, height * 0.15, depth, segments, 2, segments);
     topCap.translate(0, height / 2 - (height * 0.075), 0);
     geometries.push(topCap);
 
     // Bottom cap
+    const bottomCap = new THREE.BoxGeometry(width, height * 0.15, depth, segments, 2, segments);
     bottomCap.translate(0, -height / 2 + (height * 0.075), 0);
     geometries.push(bottomCap);
 
-    // Merge all geometries
+    // Merge all geometries into one
     const mergedGeometry = mergeGeometries(geometries);
 
-    // Center the geometry
-    mergedGeometry.center();
+    // Compute normals and bounds
+    mergedGeometry.computeVertexNormals();
+    mergedGeometry.computeBoundingBox();
+    mergedGeometry.computeBoundingSphere();
 
     return mergedGeometry;
 }
