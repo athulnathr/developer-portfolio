@@ -20,6 +20,7 @@ import { GeometricRobot } from "./GeometricRobot";
 import { CuteRobot } from "./CuteRobot";
 import { MechanicalRobot } from "./MechanicalRobot";
 import { content } from "@/constants/content";
+import { Human } from "./Human";
 
 interface RoboModelProps {
   currentSection: SectionName;
@@ -70,12 +71,18 @@ export const RoboModel: React.FC<RoboModelProps> = ({
   const [targetScale, setTargetScale] = useState(1);
   const [walkProgress, setWalkProgress] = useState(0);
   const [heroAnimationTime, setHeroAnimationTime] = useState(0);
+  const [shouldHumanStandUp, setShouldHumanStandUp] = useState(false);
 
   // Update target position and rotation based on current section (Robot-Centric)
   useEffect(() => {
     const pos = roboPositions[currentSection];
     // Robot stays at origin, only Y position changes slightly
     setTargetPosition(new THREE.Vector3(pos.x, pos.y, pos.z));
+
+    // Reset human stand up state when leaving about section
+    if (currentSection !== "about") {
+      setShouldHumanStandUp(false);
+    }
 
     // Apply transformation level in skills section
     if (currentSection === "skills") {
@@ -158,6 +165,11 @@ export const RoboModel: React.FC<RoboModelProps> = ({
     // === SECTION-SPECIFIC ANIMATIONS (Robot-Centric) ===
     switch (currentSection) {
       case "about":
+        // Trigger human stand up animation after camera focuses
+        if (sectionProgress > 0.3 && !shouldHumanStandUp) {
+          setShouldHumanStandUp(true);
+        }
+
         // Stand up and turn to face camera (left)
         if (sectionProgress < 0.3) {
           const standProgress = sectionProgress / 0.3;
@@ -493,35 +505,15 @@ export const RoboModel: React.FC<RoboModelProps> = ({
   return (
     <group ref={groupRef}>
       {/* Conditionally render robot based on type */}
-      {robotType === "mechanical" ? (
-        <MechanicalRobot
-          headRef={headRef}
-          torsoRef={torsoRef}
-          waistRef={waistRef}
-          leftArmRef={leftArmRef}
-          rightArmRef={rightArmRef}
-          leftElbowRef={leftElbowRef}
-          rightElbowRef={rightElbowRef}
-          leftHandRef={leftHandRef}
-          rightHandRef={rightHandRef}
-          bodyRef={bodyRef}
-          leftLegRef={leftLegRef}
-          rightLegRef={rightLegRef}
-          leftKneeRef={leftKneeRef}
-          rightKneeRef={rightKneeRef}
-        />
-      ) : (
-        <CuteRobot
-          headRef={headRef}
-          leftArmRef={leftArmRef}
-          rightArmRef={rightArmRef}
-          bodyRef={bodyRef}
-          leftLegRef={leftLegRef}
-          rightLegRef={rightLegRef}
-          leftKneeRef={leftKneeRef}
-          rightKneeRef={rightKneeRef}
-        />
-      )}
+      <Human
+        headRef={headRef}
+        torsoRef={torsoRef}
+        waistRef={waistRef}
+        leftArmRef={leftArmRef}
+        rightArmRef={rightArmRef}
+        shouldStandUp={shouldHumanStandUp}
+        props={{ position: [0, -1, 0], scale: 1, rotation: [0, Math.PI, 0] }}
+      />
 
       {/* Additional lighting for the robot */}
       {robotType === "mechanical" ? (

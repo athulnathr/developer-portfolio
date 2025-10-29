@@ -7,7 +7,7 @@ export const Chair: React.FC = () => {
   const groupRef = useRef<THREE.Group>(null);
 
   return (
-    <group ref={groupRef} position={[0, 0, 0]}>
+    <group ref={groupRef} position={[0, 0, 0]} name="Chair">
       {/* Seat */}
       <mesh position={[0, 0.4, 0]} castShadow receiveShadow>
         <boxGeometry args={[0.8, 0.1, 0.8]} />
