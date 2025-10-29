@@ -99,7 +99,7 @@ export const SciFiRoboCanvas: React.FC<SciFiRoboCanvasProps> = ({
           />
 
           {/* SciFi Room Environment - Fixed at 45°, scaled to fill viewport */}
-          <ImportedRoom position={[0, 0, 0]} />
+          <ImportedRoom position={[0, Math.PI / 4, 0]} />
 
           {/* Chair (always visible since robot is sitting) - positioned in room */}
           <Chair />

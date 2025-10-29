@@ -1,13 +1,13 @@
 "use client";
 
-import { NewHero } from "@/components/sections/NewHero";
-import { About } from "@/components/sections/About";
-import { Skills } from "@/components/sections/Skills";
-import { Projects } from "@/components/sections/Projects";
-import { Contact } from "@/components/sections/Contact";
-import { Footer } from "@/components/sections/Footer";
+// import { NewHero } from "@/components/sections/NewHero";
+// import { About } from "@/components/sections/About";
+// import { Skills } from "@/components/sections/Skills";
+// import { Projects } from "@/components/sections/Projects";
+// import { Contact } from "@/components/sections/Contact";
+// import { Footer } from "@/components/sections/Footer";
 import { Navbar } from "@/components/ui/Navbar";
-import { ContentOverlay } from "@/components/ui/ContentOverlay";
+// import { ContentOverlay } from "@/components/ui/ContentOverlay";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useScrollProgress } from "@/hooks/useScrollProgress";
 import { useCursorTracking } from "@/hooks/useCursorTracking";
@@ -115,7 +115,7 @@ export default function Home() {
       )}
 
       {/* Content Overlay */}
-      {hasMounted && !prefersReducedMotion && (
+      {/* {hasMounted && !prefersReducedMotion && (
         <ContentOverlay
           currentSection={scrollProgress.currentSection}
           sectionProgress={
@@ -124,13 +124,13 @@ export default function Home() {
         />
       )}
 
-      {/* Sections - Robot-centric layout (minimal content, mostly for scroll tracking) */}
+      {/* Sections - Robot-centric layout (minimal content, mostly for scroll tracking) 
       <NewHero />
       <About />
       <Skills />
       <Projects onProjectHover={setHoveredProject} />
       <Contact />
-      <Footer />
+      <Footer /> */}
     </main>
   );
 }

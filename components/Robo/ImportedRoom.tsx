@@ -13,16 +13,15 @@ export function ImportedRoom(props: any): JSX.Element {
     "./models/scene.gltf"
   ) as unknown as GLTFResult;
 
-  // Fixed room: 45° rotation, scaled to fill viewport, no animation
   return (
     <group
       {...props}
       dispose={null}
-      rotation={[0, -Math.PI / 3.2, 0]}
-      scale={1.6}
-      position={[0, 0, 1]}
+      rotation={[0, -Math.PI / 2.95, 0]}
+      scale={1.95}
+      position={[0, 0, 2]}
     >
-      <group rotation={[-Math.PI / 2, 0, 0]} scale={0.655}>
+      <group rotation={[-Math.PI / 2, 0, 0]} scale={0.6}>
         <group rotation={[Math.PI / 2, 0, 0]} scale={0.01}>
           <group rotation={[-Math.PI / 2, 0, 0]} scale={100}>
             <mesh
