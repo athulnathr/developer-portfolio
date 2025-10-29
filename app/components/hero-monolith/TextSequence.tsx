@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 interface TextSequenceProps {
   active: boolean;
+  textIndex: number; // -1 = none, 0, 1, 2 = which texts to show
   onComplete: () => void;
 }
 
@@ -16,88 +17,74 @@ const texts = [
 
 export default function TextSequence({
   active,
+  textIndex,
   onComplete,
 }: TextSequenceProps) {
-  const [visibleIndex, setVisibleIndex] = useState(-1);
-
   useEffect(() => {
-    if (!active) {
-      setVisibleIndex(-1);
-      return;
-    }
-
-    const timers: NodeJS.Timeout[] = [];
-
-    texts.forEach((item, index) => {
+    // When all texts are shown (textIndex 2), trigger completion after delay
+    if (active && textIndex === 2) {
       const timer = setTimeout(() => {
-        setVisibleIndex(index);
+        onComplete();
+      }, 2000);
 
-        // Call onComplete after last text
-        if (index === texts.length - 1) {
-          setTimeout(onComplete, 2000);
-        }
-      }, item.delay * 1000);
-
-      timers.push(timer);
-    });
-
-    return () => {
-      timers.forEach((timer) => clearTimeout(timer));
-    };
-  }, [active, onComplete]);
+      return () => clearTimeout(timer);
+    }
+  }, [active, textIndex, onComplete]);
 
   return (
-    <div className="fixed inset-0 z-20 pointer-events-none flex items-center justify-center">
-      <div className="w-full max-w-6xl px-8 ml-[10%]">
-        <AnimatePresence mode="sync">
-          {texts.map((item, index) => {
-            if (index > visibleIndex) return null;
+    <div className="absolute inset-0 z-20 pointer-events-none">
+      <div className="absolute top-1/2 left-[15%] -translate-y-1/2 max-w-4xl flex flex-col items-start">
+        {texts.map((item, index) => {
+          // Only show texts up to textIndex
+          if (index > textIndex) return null;
 
-            return (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 50 }}
-                transition={{
-                  duration: 0.8,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
-                className={`mb-6 ${
-                  item.isMain
-                    ? "text-7xl md:text-8xl font-bold"
-                    : "text-4xl md:text-5xl font-light"
-                }`}
-              >
-                {item.text.split("").map((char, charIndex) => (
-                  <motion.span
-                    key={charIndex}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{
-                      duration: 0.5,
-                      delay: charIndex * 0.03,
-                      ease: [0.22, 1, 0.36, 1],
-                    }}
-                    className={
-                      item.isMain
-                        ? "inline-block text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-400"
-                        : "inline-block text-zinc-300"
-                    }
-                    style={{
-                      textShadow: item.isMain
-                        ? "0 0 30px rgba(99, 102, 241, 0.5)"
-                        : "none",
-                    }}
-                  >
-                    {char === " " ? "\u00A0" : char}
-                  </motion.span>
-                ))}
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
+          return (
+            <div
+              key={index}
+              className={`mb-8 ${
+                item.isMain
+                  ? "text-7xl md:text-9xl font-bold"
+                  : "text-5xl md:text-6xl font-light"
+              }`}
+              style={{
+                opacity: 1,
+              }}
+            >
+              {item.text.split("").map((char, charIndex) => (
+                <span
+                  key={charIndex}
+                  className={
+                    item.isMain
+                      ? "inline-block text-white drop-shadow-[0_0_30px_rgba(99,102,241,0.8)]"
+                      : "inline-block text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.5)]"
+                  }
+                  style={{
+                    animation: `fadeInUp 0.5s ease forwards ${
+                      charIndex * 0.03
+                    }s`,
+                    opacity: 0,
+                  }}
+                >
+                  {char === " " ? "\u00A0" : char}
+                </span>
+              ))}
+            </div>
+          );
+        })}
       </div>
+
+      <style jsx>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 }

@@ -30,6 +30,7 @@ export default function HeroMonolith() {
   const [monolithPosition, setMonolithPosition] = useState<
     [number, number, number]
   >([0, 2, 0]);
+  const [textIndex, setTextIndex] = useState(-1); // -1 = none, 0, 1, 2 = text progression
   const { shake } = useScreenShake();
 
   // Lock scroll on mount
@@ -87,14 +88,24 @@ export default function HeroMonolith() {
     setScrollLocked(false);
   }, []);
 
-  // Scroll detection for reassembly
+  // Scroll detection for progressive text reveal
   useEffect(() => {
-    if (phase !== "shattered") return;
+    if (phase !== "shattered" && phase !== "text-sequence") return;
 
     const handleScroll = (e: WheelEvent) => {
       e.preventDefault();
-      // Trigger reassembly on scroll attempt
-      setPhase("reassembling");
+
+      if (phase === "shattered") {
+        // First scroll: start text sequence with first text
+        setPhase("text-sequence");
+        setTextIndex(0);
+        setMonolithPosition([-4, 2, 0]);
+      } else if (phase === "text-sequence") {
+        // Subsequent scrolls: advance text
+        if (textIndex < 2) {
+          setTextIndex((prev) => prev + 1);
+        }
+      }
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -103,7 +114,14 @@ export default function HeroMonolith() {
         ["ArrowDown", "ArrowUp", "Space", "PageDown", "PageUp"].includes(e.code)
       ) {
         e.preventDefault();
-        setPhase("reassembling");
+
+        if (phase === "shattered") {
+          setPhase("text-sequence");
+          setTextIndex(0);
+          setMonolithPosition([-4, 2, 0]);
+        } else if (phase === "text-sequence" && textIndex < 2) {
+          setTextIndex((prev) => prev + 1);
+        }
       }
     };
 
@@ -116,7 +134,14 @@ export default function HeroMonolith() {
         Math.abs(touch.clientY - (window as any).touchStartY) > scrollThreshold
       ) {
         e.preventDefault();
-        setPhase("reassembling");
+
+        if (phase === "shattered") {
+          setPhase("text-sequence");
+          setTextIndex(0);
+          setMonolithPosition([-4, 2, 0]);
+        } else if (phase === "text-sequence" && textIndex < 2) {
+          setTextIndex((prev) => prev + 1);
+        }
       }
     };
 
@@ -135,7 +160,7 @@ export default function HeroMonolith() {
       window.removeEventListener("touchstart", handleTouchStart);
       window.removeEventListener("touchmove", handleTouchMove);
     };
-  }, [phase]);
+  }, [phase, textIndex]);
 
   // Keyboard navigation for crack progression
   useEffect(() => {
@@ -162,7 +187,12 @@ export default function HeroMonolith() {
       if (crackStage === 1) return "Click again to crack further";
       if (crackStage === 2) return "One more click to shatter";
     }
-    if (phase === "shattered") return "Scroll to continue";
+    if (phase === "shattered") return "Scroll to begin";
+    if (phase === "text-sequence") {
+      if (textIndex === 0) return "Scroll to continue";
+      if (textIndex === 1) return "Scroll to continue";
+      if (textIndex === 2) return "Wait...";
+    }
     return "";
   };
 
@@ -178,7 +208,7 @@ export default function HeroMonolith() {
       {/* Three.js Scene */}
       {phase !== "loading" && (
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 z-0"
           onMouseEnter={() => setHovering(true)}
           onMouseLeave={() => setHovering(false)}
         >
@@ -206,13 +236,18 @@ export default function HeroMonolith() {
 
       {/* Interaction Hint */}
       <InteractionHint
-        visible={phase === "interactive" || phase === "shattered"}
+        visible={
+          phase === "interactive" ||
+          phase === "shattered" ||
+          phase === "text-sequence"
+        }
         message={getHintMessage()}
       />
 
       {/* Text Sequence */}
       <TextSequence
         active={phase === "text-sequence"}
+        textIndex={textIndex}
         onComplete={handleTextComplete}
       />
 

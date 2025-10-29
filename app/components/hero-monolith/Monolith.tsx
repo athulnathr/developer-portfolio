@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useMemo, useEffect } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useRef, useMemo, useEffect, useState } from "react";
+import { useFrame, ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 import {
   createMonolithGeometry,
@@ -27,6 +27,12 @@ export default function Monolith({
 }: MonolithProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const crackLinesRef = useRef<THREE.LineSegments[]>([]);
+
+  // Rotation control state
+  const [isDragging, setIsDragging] = useState(false);
+  const [rotationOffset, setRotationOffset] = useState({ x: 0, y: 0 });
+  const dragStart = useRef({ x: 0, y: 0 });
+  const lastRotation = useRef({ x: 0, y: 0 });
 
   const geometry = useMemo(() => createMonolithGeometry(), []);
 
@@ -84,9 +90,10 @@ export default function Monolith({
 
   useFrame((state) => {
     if (meshRef.current && visible) {
-      // Subtle idle animation
-      meshRef.current.rotation.y =
-        Math.sin(state.clock.elapsedTime * 0.2) * 0.02;
+      // Apply user rotation offset + subtle idle animation
+      const idleRotation = Math.sin(state.clock.elapsedTime * 0.2) * 0.02;
+      meshRef.current.rotation.x = rotationOffset.x;
+      meshRef.current.rotation.y = rotationOffset.y + idleRotation;
 
       // Pulse crack glow lines
       crackLinesRef.current.forEach((line) => {
@@ -105,7 +112,10 @@ export default function Monolith({
     }
   });
 
-  const handleClick = () => {
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
+    // Only trigger click if not dragging (to separate rotation from clicking)
+    if (isDragging) return;
+
     if (crackStage < 2) {
       // Progress to next crack stage
       onCrackProgression();
@@ -126,6 +136,38 @@ export default function Monolith({
     }
   };
 
+  const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    setIsDragging(false); // Will be set to true on move
+    dragStart.current = { x: e.clientX, y: e.clientY };
+    lastRotation.current = { ...rotationOffset };
+  };
+
+  const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
+    if (e.buttons === 0) return; // No button pressed
+
+    const deltaX = e.clientX - dragStart.current.x;
+    const deltaY = e.clientY - dragStart.current.y;
+
+    // If moved more than 5 pixels, consider it dragging
+    if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+      setIsDragging(true);
+    }
+
+    // Horizontal drag → Y rotation (turntable)
+    // Vertical drag → X rotation (tilt)
+    const sensitivity = 0.01;
+    setRotationOffset({
+      x: lastRotation.current.x - deltaY * sensitivity,
+      y: lastRotation.current.y + deltaX * sensitivity,
+    });
+  };
+
+  const handlePointerUp = () => {
+    // Reset dragging state after a short delay to prevent click from firing
+    setTimeout(() => setIsDragging(false), 100);
+  };
+
   if (!visible) return null;
 
   return (
@@ -135,6 +177,9 @@ export default function Monolith({
       position={position}
       scale={[1, 1, 1]}
       onClick={handleClick}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
       castShadow
       receiveShadow
       name="monolith"

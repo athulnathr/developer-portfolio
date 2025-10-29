@@ -186,11 +186,13 @@ export default function MonolithScene({
           )}
 
           {/* Fragments (visible after shattering) */}
-          {(phase === "shattered" || phase === "reassembling") && (
+          {(phase === "shattered" ||
+            phase === "reassembling" ||
+            phase === "complete") && (
             <MonolithFragments
               fragments={fragments}
               visible={true}
-              reassembling={phase === "reassembling"}
+              reassembling={phase === "reassembling" || phase === "complete"}
               targetPosition={new THREE.Vector3(...monolithPosition)}
               onReassemble={onReassembleComplete}
               lightPosition={mousePosition}
