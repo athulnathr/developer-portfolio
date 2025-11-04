@@ -7,19 +7,93 @@ Source: https://sketchfab.com/3d-models/standing-sitting-animation-09b82fda6ec54
 Title: Standing / Sitting Animation
 */
 
-import React, { useEffect, useMemo, useRef } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useGraph, useFrame } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import { SkeletonUtils } from 'three-stdlib'
 import * as THREE from 'three'
 
+// Helper function for smooth interpolation
+const lerp = (start, end, t) => {
+  return start + (end - start) * t
+}
+
+// Helper function to clamp value between min and max
+const clamp = (value, min, max) => {
+  return Math.max(min, Math.min(max, value))
+}
+
+// Easing functions for more natural motion
+const easeInOutCubic = (t) => {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+}
+
+const easeOutElastic = (t) => {
+  const c4 = (2 * Math.PI) / 3
+  return t === 0 ? 0 : t === 1 ? 1 : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1
+}
+
+const easeInOutQuad = (t) => {
+  return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
+}
+
+// Calculate responsive target position based on screen width
+const getTargetPosition = () => {
+  if (typeof window === 'undefined') return { x: 3.5, y: 0, z: -1 }
+  
+  const width = window.innerWidth
+  if (width < 768) {
+    // Mobile
+    return { x: 2, y: 0, z: -0.5 }
+  } else if (width < 1024) {
+    // Tablet
+    return { x: 2.8, y: 0, z: -0.7 }
+  } else {
+    // Desktop
+    return { x: 3.5, y: 0, z: -1 }
+  }
+}
+
 export function Human(props) {
+  const { currentSection = 'hero', sectionProgress = 0 } = props
+  
   const group = useRef()
-  const { scene, animations } = useGLTF('./models/human.gltf')
+  
+  // Use compressed version since human.bin file size (102KB) matches human-c.gltf's expected size (104KB)
+  // The original human.gltf expects 1.4MB, causing the "Invalid typed array length: 117" error
+  // Note: human-c.gltf uses meshopt compression - ensure your GLTF loader supports EXT_meshopt_compression
+  const { scene, animations } = useGLTF('./models/human-c.gltf')
   const clone = useMemo(() => SkeletonUtils.clone(scene), [scene])
   const { nodes, materials } = useGraph(clone)
   
-  // Manually create animation mixer for the cloned scene
+  // Bone references for procedural animation
+  const bonesRef = useRef({
+    head: null,
+    neck: null,
+    spine: null,
+    hips: null,
+    leftShoulder: null,
+    rightShoulder: null,
+    leftArm: null,
+    rightArm: null,
+    leftForearm: null,
+    rightForearm: null,
+    leftHand: null,
+    rightHand: null,
+    leftThigh: null,
+    rightThigh: null,
+    leftCalf: null,
+    rightCalf: null,
+    leftFoot: null,
+    rightFoot: null,
+  })
+
+  // Animation state
+  const [initialPosition] = useState({ x: 0, y: 0, z: 0 })
+  const [targetWallPosition] = useState(getTargetPosition())
+  const animationTimeRef = useRef(0)
+  
+  // Manually create animation mixer for the cloned scene (for standing up animation)
   const mixer = useMemo(() => {
     if (clone) {
       return new THREE.AnimationMixer(clone)
@@ -27,7 +101,7 @@ export function Human(props) {
     return null
   }, [clone])
 
-  // Create actions from animations
+  // Create actions from animations (standing up animation)
   const actions = useMemo(() => {
     if (!mixer || !animations || animations.length === 0) return {}
     
@@ -39,22 +113,93 @@ export function Human(props) {
     return actionsMap
   }, [mixer, animations])
 
-  // Update mixer on each frame
-  useFrame((state, delta) => {
-    if (mixer) {
-      mixer.update(delta)
-    }
-  })
-
-
+  // Extract bone references from skeleton
   useEffect(() => {
+    if (nodes._rootJoint) {
+      nodes._rootJoint.traverse((bone) => {
+        const name = bone.name.toLowerCase()
+        
+        // Head and neck
+        if (name.includes(' ') && !name.includes('toe')) {
+          bonesRef.current.head = bone
+        }
+        if (name.includes('neck')) {
+          bonesRef.current.neck = bone
+        }
+        
+        // Spine and hips
+        if (name.includes('spine') && !name.includes('shoulder')) {
+          bonesRef.current.spine = bone
+        }
+        if (name.includes('hip') || name.includes('pelvis')) {
+          bonesRef.current.hips = bone
+        }
+        
+        // Arms - Left
+        if (name.includes('shoulder') && name.includes('l')) {
+          bonesRef.current.leftShoulder = bone
+        }
+        if ((name.includes('upperarm') || name.includes('arm')) && name.includes('l') && !name.includes('forearm')) {
+          bonesRef.current.leftArm = bone
+        }
+        if (name.includes('forearm') && name.includes('l')) {
+          bonesRef.current.leftForearm = bone
+        }
+        if (name.includes('hand') && name.includes('l')) {
+          bonesRef.current.leftHand = bone
+        }
+        
+        // Arms - Right
+        if (name.includes('shoulder') && name.includes('r')) {
+          bonesRef.current.rightShoulder = bone
+        }
+        if ((name.includes('upperarm') || name.includes('arm')) && name.includes('r') && !name.includes('forearm')) {
+          bonesRef.current.rightArm = bone
+        }
+        if (name.includes('forearm') && name.includes('r')) {
+          bonesRef.current.rightForearm = bone
+        }
+        if (name.includes('hand') && name.includes('r')) {
+          bonesRef.current.rightHand = bone
+        }
+        
+        // Legs - Left
+        if ((name.includes('thigh') || name.includes('upleg')) && name.includes('l')) {
+          bonesRef.current.leftThigh = bone
+        }
+        if ((name.includes('calf') || name.includes('leg')) && name.includes('l') && !name.includes('upleg')) {
+          bonesRef.current.leftCalf = bone
+        }
+        if (name.includes('foot') && name.includes('l') && !name.includes('toe')) {
+          bonesRef.current.leftFoot = bone
+        }
+        
+        // Legs - Right
+        if ((name.includes('thigh') || name.includes('upleg')) && name.includes('r')) {
+          bonesRef.current.rightThigh = bone
+        }
+        if ((name.includes('calf') || name.includes('leg')) && name.includes('r') && !name.includes('upleg')) {
+          bonesRef.current.rightCalf = bone
+        }
+        if (name.includes('foot') && name.includes('r') && !name.includes('toe')) {
+          bonesRef.current.rightFoot = bone
+        }
+      })
+      
+      console.log('Extracted bones:', bonesRef.current)
+    }
+  }, [nodes])
+
+  // Play standing up animation initially
+  useEffect(() => {
+    console.log('actions', props.shouldStandUp , actions )
     if (props.shouldStandUp && actions) {
       const actionKeys = Object.keys(actions)
       
       if (actionKeys.length > 0) {
-        // Play the first animation (should be the standing animation)
         const animationName = actionKeys[0]
         const action = actions[animationName]
+        console.log('action', action )
         if (action) {
           action.reset()
           action.setLoop(THREE.LoopOnce, 1)
@@ -64,6 +209,245 @@ export function Human(props) {
       }
     }
   }, [props.shouldStandUp, actions])
+
+  // Update mixer for standing animation
+  useFrame((state, delta) => {
+    if (mixer) {
+      mixer.update(delta)
+    }
+    
+    // Only apply procedural animations when in About section
+    if (currentSection !== 'about') {
+      animationTimeRef.current = 0
+      return
+    }
+    
+    // Increment animation time for walking cycle
+    animationTimeRef.current += delta
+    const time = animationTimeRef.current
+    
+    const progress = clamp(sectionProgress, 0, 1)
+    
+    // Animation stages based on scroll progress
+    // 0.0 - 0.2: Look up (head lift) with smile
+    // 0.2 - 0.4: Wave greeting with personality
+    // 0.4 - 1.0: Natural walk to wall
+    
+    // === IDLE BREATHING ANIMATION (always active) ===
+    const breathe = Math.sin(time * 1.5) * 0.02
+    if (bonesRef.current.spine) {
+      bonesRef.current.spine.rotation.x = breathe
+    }
+    
+    // === HEAD LIFT ANIMATION (0.0 - 0.2) - More natural ===
+    const headLiftProgress = clamp((progress - 0.0) / 0.2, 0, 1)
+    const easedHeadLift = easeInOutCubic(headLiftProgress)
+    
+    if (bonesRef.current.neck) {
+      // Natural head tilt with slight anticipation
+      const anticipation = Math.sin(easedHeadLift * Math.PI) * 0.05
+      const neckRotation = easedHeadLift * 0.4 + anticipation
+      bonesRef.current.neck.rotation.x = lerp(bonesRef.current.neck.rotation.x, neckRotation, 0.15)
+      // Slight head turn towards camera
+      bonesRef.current.neck.rotation.y = lerp(bonesRef.current.neck.rotation.y, easedHeadLift * 0.1, 0.1)
+    }
+    
+    if (bonesRef.current.head) {
+      const headRotation = easedHeadLift * 0.2
+      bonesRef.current.head.rotation.x = lerp(bonesRef.current.head.rotation.x, headRotation, 0.15)
+      // Micro head movements for life
+      const microMove = Math.sin(time * 3) * 0.01 * easedHeadLift
+      bonesRef.current.head.rotation.z = microMove
+    }
+    
+    // === WAVE ANIMATION (0.2 - 0.4) - More expressive and friendly ===
+    const waveProgress = clamp((progress - 0.2) / 0.2, 0, 1)
+    const easedWave = easeInOutCubic(waveProgress)
+    
+    if (bonesRef.current.rightShoulder || bonesRef.current.rightArm) {
+      const shoulderBone = bonesRef.current.rightShoulder || bonesRef.current.rightArm
+      
+      // Natural arm raise with anticipation
+      const raiseProgress = Math.min(easedWave * 1.5, 1)
+      const armRaiseZ = raiseProgress * -1.8 // Raise arm higher
+      const armRaiseX = raiseProgress * 0.5 // Slight forward movement
+      const armRaiseY = raiseProgress * 0.3 // Slight outward rotation
+      
+      shoulderBone.rotation.z = lerp(shoulderBone.rotation.z, armRaiseZ, 0.2)
+      shoulderBone.rotation.x = lerp(shoulderBone.rotation.x, armRaiseX, 0.2)
+      shoulderBone.rotation.y = lerp(shoulderBone.rotation.y, armRaiseY, 0.2)
+    }
+    
+    if (bonesRef.current.rightForearm && waveProgress > 0) {
+      // Enthusiastic wave motion with natural rhythm
+      const waveSpeed = 6.5
+      const waveTime = time * waveSpeed
+      const waveAmount = Math.sin(waveTime) * 0.6
+      const waveIntensity = Math.min(easedWave * 2, 1) * (1 - Math.max((progress - 0.4) / 0.1, 0))
+      
+      // Natural wrist rotation
+      bonesRef.current.rightForearm.rotation.y = waveAmount * waveIntensity
+      bonesRef.current.rightForearm.rotation.z = lerp(bonesRef.current.rightForearm.rotation.z, -0.7 * waveIntensity, 0.2)
+      
+      // Add slight up-down motion for more life
+      const upDown = Math.sin(waveTime * 0.5) * 0.1 * waveIntensity
+      bonesRef.current.rightForearm.rotation.x = upDown
+    }
+    
+    // Body leans slightly during wave
+    if (bonesRef.current.spine && waveProgress > 0 && waveProgress < 1) {
+      const leanAmount = Math.sin(easedWave * Math.PI) * 0.08
+      bonesRef.current.spine.rotation.z = lerp(bonesRef.current.spine.rotation.z, -leanAmount, 0.1)
+    }
+    
+    // === REALISTIC WALKING ANIMATION (0.4 - 1.0) ===
+    const walkProgress = clamp((progress - 0.4) / 0.6, 0, 1)
+    const easedWalk = easeInOutCubic(walkProgress)
+    
+    if (walkProgress > 0 && group.current) {
+      // Move character position with smooth acceleration/deceleration
+      const startPos = initialPosition
+      const endPos = targetWallPosition
+      
+      group.current.position.x = lerp(startPos.x, endPos.x, easedWalk)
+      group.current.position.z = lerp(startPos.z, endPos.z, easedWalk)
+      
+      // Natural body rotation to face direction
+      const targetRotation = Math.atan2(endPos.x - startPos.x, endPos.z - startPos.z)
+      group.current.rotation.y = lerp(group.current.rotation.y, targetRotation, 0.08)
+      
+      // === REALISTIC WALK CYCLE ===
+      const walkCycleSpeed = 5.5 // Slower for more natural pace
+      const walkCycleTime = time * walkCycleSpeed
+      const walkIntensity = Math.min(walkProgress * 2, 1) // Smooth start
+      
+      // Vertical body bob (natural walking bounce)
+      const bobAmount = Math.abs(Math.sin(walkCycleTime * 2)) * 0.08 * walkIntensity
+      if (group.current) {
+        group.current.position.y = initialPosition.y + bobAmount
+      }
+      
+      // === REALISTIC LEG MOTION ===
+      // Left leg
+      if (bonesRef.current.leftThigh) {
+        const leftLegCycle = Math.sin(walkCycleTime)
+        bonesRef.current.leftThigh.rotation.x = leftLegCycle * 0.8 * walkIntensity
+        bonesRef.current.leftThigh.rotation.y = leftLegCycle * 0.05 * walkIntensity // Slight inward motion
+      }
+      
+      if (bonesRef.current.leftCalf) {
+        // Knee bends more when leg swings forward
+        const leftKneeBend = Math.max(0, Math.sin(walkCycleTime - 0.3)) * 1.2
+        bonesRef.current.leftCalf.rotation.x = leftKneeBend * walkIntensity
+      }
+      
+      if (bonesRef.current.leftFoot) {
+        // Foot naturally points down when lifted
+        const footAngle = Math.sin(walkCycleTime) * 0.3
+        bonesRef.current.leftFoot.rotation.x = Math.min(0, footAngle) * walkIntensity
+      }
+      
+      // Right leg (opposite phase)
+      if (bonesRef.current.rightThigh) {
+        const rightLegCycle = Math.sin(walkCycleTime + Math.PI)
+        bonesRef.current.rightThigh.rotation.x = rightLegCycle * 0.8 * walkIntensity
+        bonesRef.current.rightThigh.rotation.y = rightLegCycle * 0.05 * walkIntensity
+      }
+      
+      if (bonesRef.current.rightCalf) {
+        const rightKneeBend = Math.max(0, Math.sin(walkCycleTime + Math.PI - 0.3)) * 1.2
+        bonesRef.current.rightCalf.rotation.x = rightKneeBend * walkIntensity
+      }
+      
+      if (bonesRef.current.rightFoot) {
+        const footAngle = Math.sin(walkCycleTime + Math.PI) * 0.3
+        bonesRef.current.rightFoot.rotation.x = Math.min(0, footAngle) * walkIntensity
+      }
+      
+      // === REALISTIC ARM SWING ===
+      // Only swing arms after wave is complete
+      const armSwingReady = Math.min((progress - 0.42) / 0.05, 1)
+      
+      if (armSwingReady > 0) {
+        // Left arm (opposite to right leg)
+        if (bonesRef.current.leftShoulder || bonesRef.current.leftArm) {
+          const leftArmBone = bonesRef.current.leftShoulder || bonesRef.current.leftArm
+          const leftSwing = Math.sin(walkCycleTime + Math.PI) * 0.5
+          leftArmBone.rotation.x = lerp(leftArmBone.rotation.x, leftSwing * walkIntensity * armSwingReady, 0.15)
+          leftArmBone.rotation.z = lerp(leftArmBone.rotation.z, 0.1 * walkIntensity, 0.1)
+        }
+        
+        // Right arm (opposite to left leg)
+        if (bonesRef.current.rightShoulder || bonesRef.current.rightArm) {
+          const rightArmBone = bonesRef.current.rightShoulder || bonesRef.current.rightArm
+          const rightSwing = Math.sin(walkCycleTime) * 0.5
+          
+          // Smoothly return from wave pose
+          rightArmBone.rotation.x = lerp(rightArmBone.rotation.x, rightSwing * walkIntensity * armSwingReady, 0.15)
+          rightArmBone.rotation.z = lerp(rightArmBone.rotation.z, 0.1 * walkIntensity, 0.15)
+          rightArmBone.rotation.y = lerp(rightArmBone.rotation.y, 0, 0.1)
+        }
+        
+        // Forearms have natural bend
+        if (bonesRef.current.rightForearm) {
+          bonesRef.current.rightForearm.rotation.z = lerp(bonesRef.current.rightForearm.rotation.z, -0.2 * walkIntensity, 0.15)
+          bonesRef.current.rightForearm.rotation.y = lerp(bonesRef.current.rightForearm.rotation.y, 0, 0.15)
+          bonesRef.current.rightForearm.rotation.x = lerp(bonesRef.current.rightForearm.rotation.x, 0, 0.15)
+        }
+        
+        if (bonesRef.current.leftForearm) {
+          bonesRef.current.leftForearm.rotation.z = lerp(bonesRef.current.leftForearm.rotation.z, 0.2 * walkIntensity, 0.15)
+        }
+      }
+      
+      // === HIP AND SPINE MOTION (weight transfer) ===
+      if (bonesRef.current.hips) {
+        // Hips rotate with steps (natural weight shift)
+        const hipRotation = Math.sin(walkCycleTime) * 0.15 * walkIntensity
+        bonesRef.current.hips.rotation.y = lerp(bonesRef.current.hips.rotation.y, hipRotation, 0.15)
+        
+        // Hips tilt side to side (weight on supporting leg)
+        const hipTilt = Math.sin(walkCycleTime * 2) * 0.08 * walkIntensity
+        bonesRef.current.hips.rotation.z = lerp(bonesRef.current.hips.rotation.z, hipTilt, 0.15)
+        
+        // Slight forward lean when walking
+        bonesRef.current.hips.rotation.x = lerp(bonesRef.current.hips.rotation.x, -0.05 * walkIntensity, 0.1)
+      }
+      
+      if (bonesRef.current.spine) {
+        // Counter-rotate spine for natural torso twist
+        const spineRotation = Math.sin(walkCycleTime) * -0.08 * walkIntensity
+        bonesRef.current.spine.rotation.y = lerp(bonesRef.current.spine.rotation.y, spineRotation, 0.15)
+        
+        // Return spine lean to neutral
+        bonesRef.current.spine.rotation.z = lerp(bonesRef.current.spine.rotation.z, 0, 0.1)
+      }
+      
+      // === HEAD MOVEMENT (follows body motion naturally) ===
+      if (bonesRef.current.head && walkProgress > 0.1) {
+        // Head stays relatively stable (compensates for body motion)
+        const headStabilize = Math.sin(walkCycleTime) * 0.03 * walkIntensity
+        bonesRef.current.head.rotation.y = lerp(bonesRef.current.head.rotation.y, -headStabilize, 0.1)
+        
+        // Slight head bob
+        const headBob = Math.sin(walkCycleTime * 2) * 0.02 * walkIntensity
+        bonesRef.current.head.rotation.x = lerp(bonesRef.current.head.rotation.x, 0.1 + headBob, 0.1)
+      }
+    } else {
+      // === IDLE POSE (when not walking) ===
+      // Gradually return all bones to neutral/rest position
+      if (bonesRef.current.spine) {
+        bonesRef.current.spine.rotation.y = lerp(bonesRef.current.spine.rotation.y, 0, 0.05)
+        bonesRef.current.spine.rotation.z = lerp(bonesRef.current.spine.rotation.z, 0, 0.05)
+      }
+      
+      if (bonesRef.current.hips) {
+        bonesRef.current.hips.rotation.x = lerp(bonesRef.current.hips.rotation.x, 0, 0.05)
+        bonesRef.current.hips.rotation.y = lerp(bonesRef.current.hips.rotation.y, 0, 0.05)
+        bonesRef.current.hips.rotation.z = lerp(bonesRef.current.hips.rotation.z, 0, 0.05)
+      }
+    }
+  })
 
   return (
     <group ref={group} {...props} dispose={null} name="Human" >
@@ -116,4 +500,5 @@ export function Human(props) {
   )
 }
 
-useGLTF.preload('./models/human.gltf')
+// Preload the compressed version (matches the actual binary file size)
+useGLTF.preload('./models/human-c.gltf')

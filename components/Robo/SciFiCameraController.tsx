@@ -3,15 +3,30 @@
 import { useRef, useEffect } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
+import { SectionName } from "@/hooks/useScrollProgress";
 
 interface SciFiCameraControllerProps {
   cursorPosition: { normalizedX: number; normalizedY: number };
   isInitialLoad?: boolean;
+  currentSection?: SectionName;
+  sectionProgress?: number;
 }
+
+// Helper function for smooth interpolation
+const lerp = (start: number, end: number, t: number) => {
+  return start + (end - start) * t;
+};
+
+// Helper function to clamp value between min and max
+const clamp = (value: number, min: number, max: number) => {
+  return Math.max(min, Math.min(max, value));
+};
 
 export const SciFiCameraController: React.FC<SciFiCameraControllerProps> = ({
   cursorPosition,
   isInitialLoad,
+  currentSection = "hero",
+  sectionProgress = 0,
 }) => {
   const { camera } = useThree();
   const basePosition = useRef(new THREE.Vector3(0, 2, 8));
@@ -60,24 +75,65 @@ export const SciFiCameraController: React.FC<SciFiCameraControllerProps> = ({
       }
     }
 
-    // After load complete: fixed position with subtle mouse parallax
+    // After load complete: handle section-based camera movement
     if (hasCompletedInitialLoad.current) {
-      // Very subtle mouse parallax
-      const parallaxStrength = 0.15;
-      const mouseOffsetX = cursorPosition.normalizedX * parallaxStrength;
-      const mouseOffsetY = cursorPosition.normalizedY * parallaxStrength * 0.5;
+      // Calculate responsive target positions based on screen size
+      const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+      const isTablet =
+        typeof window !== "undefined" &&
+        window.innerWidth < 1024 &&
+        window.innerWidth >= 768;
 
-      const targetPosition = basePosition.current.clone();
-      targetPosition.x += mouseOffsetX;
-      targetPosition.y += mouseOffsetY;
+      // Camera positions for About section
+      let aboutCameraPosition = new THREE.Vector3(
+        isMobile ? -1.5 : -2,
+        2,
+        isMobile ? 6 : 5
+      );
+      let aboutLookAtPosition = new THREE.Vector3(
+        lerp(0, isMobile ? 1.5 : 2.5, clamp(sectionProgress, 0, 1)),
+        1.5,
+        0
+      );
 
-      // Smooth lerp to target
+      // Determine target position based on current section
+      let targetPosition = basePosition.current.clone();
+      let targetLookAt = baseLookAt.current.clone();
+
+      if (currentSection === "about") {
+        // In About section, move camera to focus on human
+        const progress = clamp(sectionProgress, 0, 1);
+
+        // Smooth transition to About camera position
+        targetPosition = aboutCameraPosition;
+        targetLookAt = aboutLookAtPosition;
+
+        // Follow human as they walk to the wall
+        if (progress > 0.4) {
+          const walkProgress = (progress - 0.4) / 0.6;
+          targetLookAt.x = lerp(
+            targetLookAt.x,
+            isMobile ? 1.8 : 3,
+            walkProgress
+          );
+        }
+      } else {
+        // Default position with subtle mouse parallax
+        const parallaxStrength = 0.15;
+        const mouseOffsetX = cursorPosition.normalizedX * parallaxStrength;
+        const mouseOffsetY =
+          cursorPosition.normalizedY * parallaxStrength * 0.5;
+
+        targetPosition.x += mouseOffsetX;
+        targetPosition.y += mouseOffsetY;
+
+        // Add subtle bob
+        targetLookAt.y += Math.sin(time * 0.5) * 0.02;
+      }
+
+      // Smooth lerp to target position and look at
       camera.position.lerp(targetPosition, delta * 2);
-
-      // Keep looking at robot center with subtle bob
-      const lookAtTarget = baseLookAt.current.clone();
-      lookAtTarget.y += Math.sin(time * 0.5) * 0.02;
-      camera.lookAt(lookAtTarget);
+      camera.lookAt(targetLookAt);
     }
   });
 

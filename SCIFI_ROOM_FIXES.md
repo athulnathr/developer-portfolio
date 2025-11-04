@@ -176,3 +176,6 @@ http://localhost:3001
 ```
 
 The sci-fi room now provides a stable, professional backdrop for the robot-centric portfolio experience.
+
+
+

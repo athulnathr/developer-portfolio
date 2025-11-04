@@ -98,6 +98,8 @@ export const SciFiRoboCanvas: React.FC<SciFiRoboCanvasProps> = ({
           <SciFiCameraController
             cursorPosition={cursorPosition}
             isInitialLoad={isInitialLoad}
+            currentSection={currentSection}
+            sectionProgress={sectionProgress}
           />
 
           {/* SciFi Room Environment - Fixed at 45°, scaled to fill viewport */}
@@ -105,12 +107,14 @@ export const SciFiRoboCanvas: React.FC<SciFiRoboCanvasProps> = ({
 
           {/* Chair (always visible since robot is sitting) - positioned in room */}
           <ImportedChair />
-          <Chair />
+          <Chair position={[0, 0, 0]} scale={1} rotation={[0, 0, 0]} />
           <Human
             position={[0, 0, 0]}
             scale={1}
             rotation={[0, 0, 0]}
-            shouldStandUp={setTimeout(() => true, 4000)}
+            shouldStandUp={true}
+            currentSection={currentSection}
+            sectionProgress={sectionProgress}
           />
           {/* Robot */}
           {/* <RoboModel

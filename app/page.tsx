@@ -7,7 +7,8 @@
 // import { Contact } from "@/components/sections/Contact";
 // import { Footer } from "@/components/sections/Footer";
 import { Navbar } from "@/components/ui/Navbar";
-// import { ContentOverlay } from "@/components/ui/ContentOverlay";
+import { ScrollSections } from "@/components/ui/ScrollSections";
+import { AboutContentOverlay } from "@/components/ui/AboutContentOverlay";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useScrollProgress } from "@/hooks/useScrollProgress";
 import { useCursorTracking } from "@/hooks/useCursorTracking";
@@ -114,23 +115,16 @@ export default function Home() {
         </ErrorBoundary>
       )}
 
-      {/* Content Overlay */}
-      {/* {hasMounted && !prefersReducedMotion && (
-        <ContentOverlay
-          currentSection={scrollProgress.currentSection}
-          sectionProgress={
-            scrollProgress.sectionProgress[scrollProgress.currentSection]
-          }
+      {/* About Content Overlay - appears on left when human reaches wall */}
+      {hasMounted && !prefersReducedMotion && (
+        <AboutContentOverlay
+          isVisible={scrollProgress.currentSection === "about"}
+          scrollProgress={scrollProgress.sectionProgress.about}
         />
       )}
 
-      {/* Sections - Robot-centric layout (minimal content, mostly for scroll tracking) 
-      <NewHero />
-      <About />
-      <Skills />
-      <Projects onProjectHover={setHoveredProject} />
-      <Contact />
-      <Footer /> */}
+      {/* Scroll Sections - invisible sections for scroll tracking */}
+      <ScrollSections />
     </main>
   );
 }
