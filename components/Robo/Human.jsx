@@ -55,7 +55,13 @@ const getTargetPosition = () => {
 }
 
 export function Human(props) {
-  const { currentSection = 'hero', sectionProgress = 0 } = props
+  const { 
+    currentSection = 'hero', 
+    sectionProgress = 0,
+    walkSpeed = 0.5,
+    waveSpeed = 0.5,
+    lerpSpeed = 0.15
+  } = props
   
   const group = useRef()
   
@@ -92,6 +98,8 @@ export function Human(props) {
   const [initialPosition] = useState({ x: 0, y: 0, z: 0 })
   const [targetWallPosition] = useState(getTargetPosition())
   const animationTimeRef = useRef(0)
+  const bonesExtractedRef = useRef(false)
+  const shouldStandUpRef = useRef(false)
   
   // Manually create animation mixer for the cloned scene (for standing up animation)
   const mixer = useMemo(() => {
@@ -113,9 +121,17 @@ export function Human(props) {
     return actionsMap
   }, [mixer, animations])
 
+  // Store action ref to avoid dependency on actions object
+  const standingActionRef = useRef(null)
+  useEffect(() => {
+    if (actions && Object.keys(actions).length > 0 && !standingActionRef.current) {
+      standingActionRef.current = actions[Object.keys(actions)[0]]
+    }
+  }, [actions])
+
   // Extract bone references from skeleton
   useEffect(() => {
-    if (nodes._rootJoint) {
+    if (nodes._rootJoint && !bonesExtractedRef.current) {
       nodes._rootJoint.traverse((bone) => {
         const name = bone.name.toLowerCase()
         
@@ -185,30 +201,22 @@ export function Human(props) {
           bonesRef.current.rightFoot = bone
         }
       })
-      
-      console.log('Extracted bones:', bonesRef.current)
+      bonesExtractedRef.current = true
     }
   }, [nodes])
 
   // Play standing up animation initially
   useEffect(() => {
-    console.log('actions', props.shouldStandUp , actions )
-    if (props.shouldStandUp && actions) {
-      const actionKeys = Object.keys(actions)
-      
-      if (actionKeys.length > 0) {
-        const animationName = actionKeys[0]
-        const action = actions[animationName]
-        console.log('action', action )
-        if (action) {
-          action.reset()
-          action.setLoop(THREE.LoopOnce, 1)
-          action.clampWhenFinished = true
-          action.play()
-        }
-      }
+    console.log('props.shouldStandUp', props.shouldStandUp, standingActionRef.current, shouldStandUpRef.current)
+    if (props.shouldStandUp && standingActionRef.current ) {
+      const action = standingActionRef.current
+      shouldStandUpRef.current = true
+      action.reset()
+      action.setLoop(THREE.LoopOnce, 1)
+      action.clampWhenFinished = true
+      action.play()
     }
-  }, [props.shouldStandUp, actions])
+  }, [props.shouldStandUp])
 
   // Update mixer for standing animation
   useFrame((state, delta) => {
@@ -247,14 +255,14 @@ export function Human(props) {
       // Natural head tilt with slight anticipation
       const anticipation = Math.sin(easedHeadLift * Math.PI) * 0.05
       const neckRotation = easedHeadLift * 0.4 + anticipation
-      bonesRef.current.neck.rotation.x = lerp(bonesRef.current.neck.rotation.x, neckRotation, 0.15)
+      bonesRef.current.neck.rotation.x = lerp(bonesRef.current.neck.rotation.x, neckRotation, lerpSpeed)
       // Slight head turn towards camera
-      bonesRef.current.neck.rotation.y = lerp(bonesRef.current.neck.rotation.y, easedHeadLift * 0.1, 0.1)
+      bonesRef.current.neck.rotation.y = lerp(bonesRef.current.neck.rotation.y, easedHeadLift * 0.1, lerpSpeed * 0.67)
     }
     
     if (bonesRef.current.head) {
       const headRotation = easedHeadLift * 0.2
-      bonesRef.current.head.rotation.x = lerp(bonesRef.current.head.rotation.x, headRotation, 0.15)
+      bonesRef.current.head.rotation.x = lerp(bonesRef.current.head.rotation.x, headRotation, lerpSpeed)
       // Micro head movements for life
       const microMove = Math.sin(time * 3) * 0.01 * easedHeadLift
       bonesRef.current.head.rotation.z = microMove
@@ -273,21 +281,21 @@ export function Human(props) {
       const armRaiseX = raiseProgress * 0.5 // Slight forward movement
       const armRaiseY = raiseProgress * 0.3 // Slight outward rotation
       
-      shoulderBone.rotation.z = lerp(shoulderBone.rotation.z, armRaiseZ, 0.2)
-      shoulderBone.rotation.x = lerp(shoulderBone.rotation.x, armRaiseX, 0.2)
-      shoulderBone.rotation.y = lerp(shoulderBone.rotation.y, armRaiseY, 0.2)
+      shoulderBone.rotation.z = lerp(shoulderBone.rotation.z, armRaiseZ, lerpSpeed)
+      shoulderBone.rotation.x = lerp(shoulderBone.rotation.x, armRaiseX, lerpSpeed)
+      shoulderBone.rotation.y = lerp(shoulderBone.rotation.y, armRaiseY, lerpSpeed)
     }
     
     if (bonesRef.current.rightForearm && waveProgress > 0) {
       // Enthusiastic wave motion with natural rhythm
-      const waveSpeed = 6.5
-      const waveTime = time * waveSpeed
+      const waveSpeedValue = 6.5 * waveSpeed
+      const waveTime = time * waveSpeedValue
       const waveAmount = Math.sin(waveTime) * 0.6
       const waveIntensity = Math.min(easedWave * 2, 1) * (1 - Math.max((progress - 0.4) / 0.1, 0))
       
       // Natural wrist rotation
       bonesRef.current.rightForearm.rotation.y = waveAmount * waveIntensity
-      bonesRef.current.rightForearm.rotation.z = lerp(bonesRef.current.rightForearm.rotation.z, -0.7 * waveIntensity, 0.2)
+      bonesRef.current.rightForearm.rotation.z = lerp(bonesRef.current.rightForearm.rotation.z, -0.7 * waveIntensity, lerpSpeed)
       
       // Add slight up-down motion for more life
       const upDown = Math.sin(waveTime * 0.5) * 0.1 * waveIntensity
@@ -297,7 +305,7 @@ export function Human(props) {
     // Body leans slightly during wave
     if (bonesRef.current.spine && waveProgress > 0 && waveProgress < 1) {
       const leanAmount = Math.sin(easedWave * Math.PI) * 0.08
-      bonesRef.current.spine.rotation.z = lerp(bonesRef.current.spine.rotation.z, -leanAmount, 0.1)
+      bonesRef.current.spine.rotation.z = lerp(bonesRef.current.spine.rotation.z, -leanAmount, lerpSpeed * 0.67)
     }
     
     // === REALISTIC WALKING ANIMATION (0.4 - 1.0) ===
@@ -314,11 +322,11 @@ export function Human(props) {
       
       // Natural body rotation to face direction
       const targetRotation = Math.atan2(endPos.x - startPos.x, endPos.z - startPos.z)
-      group.current.rotation.y = lerp(group.current.rotation.y, targetRotation, 0.08)
+      group.current.rotation.y = lerp(group.current.rotation.y, targetRotation, lerpSpeed * 0.53)
       
       // === REALISTIC WALK CYCLE ===
-      const walkCycleSpeed = 5.5 // Slower for more natural pace
-      const walkCycleTime = time * walkCycleSpeed
+      const walkCycleSpeedValue = 5.5 * walkSpeed // Configurable walking pace
+      const walkCycleTime = time * walkCycleSpeedValue
       const walkIntensity = Math.min(walkProgress * 2, 1) // Smooth start
       
       // Vertical body bob (natural walking bounce)
@@ -373,8 +381,8 @@ export function Human(props) {
         if (bonesRef.current.leftShoulder || bonesRef.current.leftArm) {
           const leftArmBone = bonesRef.current.leftShoulder || bonesRef.current.leftArm
           const leftSwing = Math.sin(walkCycleTime + Math.PI) * 0.5
-          leftArmBone.rotation.x = lerp(leftArmBone.rotation.x, leftSwing * walkIntensity * armSwingReady, 0.15)
-          leftArmBone.rotation.z = lerp(leftArmBone.rotation.z, 0.1 * walkIntensity, 0.1)
+          leftArmBone.rotation.x = lerp(leftArmBone.rotation.x, leftSwing * walkIntensity * armSwingReady, lerpSpeed)
+          leftArmBone.rotation.z = lerp(leftArmBone.rotation.z, 0.1 * walkIntensity, lerpSpeed * 0.67)
         }
         
         // Right arm (opposite to left leg)
@@ -383,20 +391,20 @@ export function Human(props) {
           const rightSwing = Math.sin(walkCycleTime) * 0.5
           
           // Smoothly return from wave pose
-          rightArmBone.rotation.x = lerp(rightArmBone.rotation.x, rightSwing * walkIntensity * armSwingReady, 0.15)
-          rightArmBone.rotation.z = lerp(rightArmBone.rotation.z, 0.1 * walkIntensity, 0.15)
-          rightArmBone.rotation.y = lerp(rightArmBone.rotation.y, 0, 0.1)
+          rightArmBone.rotation.x = lerp(rightArmBone.rotation.x, rightSwing * walkIntensity * armSwingReady, lerpSpeed)
+          rightArmBone.rotation.z = lerp(rightArmBone.rotation.z, 0.1 * walkIntensity, lerpSpeed)
+          rightArmBone.rotation.y = lerp(rightArmBone.rotation.y, 0, lerpSpeed * 0.67)
         }
         
         // Forearms have natural bend
         if (bonesRef.current.rightForearm) {
-          bonesRef.current.rightForearm.rotation.z = lerp(bonesRef.current.rightForearm.rotation.z, -0.2 * walkIntensity, 0.15)
-          bonesRef.current.rightForearm.rotation.y = lerp(bonesRef.current.rightForearm.rotation.y, 0, 0.15)
-          bonesRef.current.rightForearm.rotation.x = lerp(bonesRef.current.rightForearm.rotation.x, 0, 0.15)
+          bonesRef.current.rightForearm.rotation.z = lerp(bonesRef.current.rightForearm.rotation.z, -0.2 * walkIntensity, lerpSpeed)
+          bonesRef.current.rightForearm.rotation.y = lerp(bonesRef.current.rightForearm.rotation.y, 0, lerpSpeed)
+          bonesRef.current.rightForearm.rotation.x = lerp(bonesRef.current.rightForearm.rotation.x, 0, lerpSpeed)
         }
         
         if (bonesRef.current.leftForearm) {
-          bonesRef.current.leftForearm.rotation.z = lerp(bonesRef.current.leftForearm.rotation.z, 0.2 * walkIntensity, 0.15)
+          bonesRef.current.leftForearm.rotation.z = lerp(bonesRef.current.leftForearm.rotation.z, 0.2 * walkIntensity, lerpSpeed)
         }
       }
       
@@ -404,47 +412,47 @@ export function Human(props) {
       if (bonesRef.current.hips) {
         // Hips rotate with steps (natural weight shift)
         const hipRotation = Math.sin(walkCycleTime) * 0.15 * walkIntensity
-        bonesRef.current.hips.rotation.y = lerp(bonesRef.current.hips.rotation.y, hipRotation, 0.15)
+        bonesRef.current.hips.rotation.y = lerp(bonesRef.current.hips.rotation.y, hipRotation, lerpSpeed)
         
         // Hips tilt side to side (weight on supporting leg)
         const hipTilt = Math.sin(walkCycleTime * 2) * 0.08 * walkIntensity
-        bonesRef.current.hips.rotation.z = lerp(bonesRef.current.hips.rotation.z, hipTilt, 0.15)
+        bonesRef.current.hips.rotation.z = lerp(bonesRef.current.hips.rotation.z, hipTilt, lerpSpeed)
         
         // Slight forward lean when walking
-        bonesRef.current.hips.rotation.x = lerp(bonesRef.current.hips.rotation.x, -0.05 * walkIntensity, 0.1)
+        bonesRef.current.hips.rotation.x = lerp(bonesRef.current.hips.rotation.x, -0.05 * walkIntensity, lerpSpeed * 0.67)
       }
       
       if (bonesRef.current.spine) {
         // Counter-rotate spine for natural torso twist
         const spineRotation = Math.sin(walkCycleTime) * -0.08 * walkIntensity
-        bonesRef.current.spine.rotation.y = lerp(bonesRef.current.spine.rotation.y, spineRotation, 0.15)
+        bonesRef.current.spine.rotation.y = lerp(bonesRef.current.spine.rotation.y, spineRotation, lerpSpeed)
         
         // Return spine lean to neutral
-        bonesRef.current.spine.rotation.z = lerp(bonesRef.current.spine.rotation.z, 0, 0.1)
+        bonesRef.current.spine.rotation.z = lerp(bonesRef.current.spine.rotation.z, 0, lerpSpeed * 0.67)
       }
       
       // === HEAD MOVEMENT (follows body motion naturally) ===
       if (bonesRef.current.head && walkProgress > 0.1) {
         // Head stays relatively stable (compensates for body motion)
         const headStabilize = Math.sin(walkCycleTime) * 0.03 * walkIntensity
-        bonesRef.current.head.rotation.y = lerp(bonesRef.current.head.rotation.y, -headStabilize, 0.1)
+        bonesRef.current.head.rotation.y = lerp(bonesRef.current.head.rotation.y, -headStabilize, lerpSpeed * 0.67)
         
         // Slight head bob
         const headBob = Math.sin(walkCycleTime * 2) * 0.02 * walkIntensity
-        bonesRef.current.head.rotation.x = lerp(bonesRef.current.head.rotation.x, 0.1 + headBob, 0.1)
+        bonesRef.current.head.rotation.x = lerp(bonesRef.current.head.rotation.x, 0.1 + headBob, lerpSpeed * 0.67)
       }
     } else {
       // === IDLE POSE (when not walking) ===
       // Gradually return all bones to neutral/rest position
       if (bonesRef.current.spine) {
-        bonesRef.current.spine.rotation.y = lerp(bonesRef.current.spine.rotation.y, 0, 0.05)
-        bonesRef.current.spine.rotation.z = lerp(bonesRef.current.spine.rotation.z, 0, 0.05)
+        bonesRef.current.spine.rotation.y = lerp(bonesRef.current.spine.rotation.y, 0, lerpSpeed * 0.33)
+        bonesRef.current.spine.rotation.z = lerp(bonesRef.current.spine.rotation.z, 0, lerpSpeed * 0.33)
       }
       
       if (bonesRef.current.hips) {
-        bonesRef.current.hips.rotation.x = lerp(bonesRef.current.hips.rotation.x, 0, 0.05)
-        bonesRef.current.hips.rotation.y = lerp(bonesRef.current.hips.rotation.y, 0, 0.05)
-        bonesRef.current.hips.rotation.z = lerp(bonesRef.current.hips.rotation.z, 0, 0.05)
+        bonesRef.current.hips.rotation.x = lerp(bonesRef.current.hips.rotation.x, 0, lerpSpeed * 0.33)
+        bonesRef.current.hips.rotation.y = lerp(bonesRef.current.hips.rotation.y, 0, lerpSpeed * 0.33)
+        bonesRef.current.hips.rotation.z = lerp(bonesRef.current.hips.rotation.z, 0, lerpSpeed * 0.33)
       }
     }
   })

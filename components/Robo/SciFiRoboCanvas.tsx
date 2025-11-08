@@ -11,6 +11,7 @@ import { PerspectiveCamera } from "@react-three/drei";
 import { ImportedRoom } from "./ImportedRoom";
 import { ImportedChair } from "./ImportedChair";
 import { Human } from "./Human";
+import { NewRob } from "./NewRob";
 
 interface SciFiRoboCanvasProps {
   currentSection: SectionName;
@@ -107,15 +108,19 @@ export const SciFiRoboCanvas: React.FC<SciFiRoboCanvasProps> = ({
 
           {/* Chair (always visible since robot is sitting) - positioned in room */}
           <ImportedChair />
-          <Chair position={[0, 0, 0]} scale={1} rotation={[0, 0, 0]} />
-          <Human
+          <Chair />
+          {/* <Human
             position={[0, 0, 0]}
             scale={1}
             rotation={[0, 0, 0]}
             shouldStandUp={true}
             currentSection={currentSection}
             sectionProgress={sectionProgress}
-          />
+            walkSpeed={0.5}
+            waveSpeed={0.5}
+            lerpSpeed={0.15}
+          /> */}
+          <NewRob />
           {/* Robot */}
           {/* <RoboModel
             currentSection={currentSection}
