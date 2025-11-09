@@ -12,6 +12,7 @@ import { ImportedRoom } from "./ImportedRoom";
 import { ImportedChair } from "./ImportedChair";
 import { Human } from "./Human";
 import { NewRob } from "./NewRob";
+import { AnimatedHuman } from "./Animated-human";
 
 interface SciFiRoboCanvasProps {
   currentSection: SectionName;
@@ -107,7 +108,7 @@ export const SciFiRoboCanvas: React.FC<SciFiRoboCanvasProps> = ({
           <ImportedRoom position={[0, Math.PI / 4, 0]} />
 
           {/* Chair (always visible since robot is sitting) - positioned in room */}
-          <ImportedChair />
+          {/* <ImportedChair /> */}
           <Chair />
           {/* <Human
             position={[0, 0, 0]}
@@ -120,7 +121,8 @@ export const SciFiRoboCanvas: React.FC<SciFiRoboCanvasProps> = ({
             waveSpeed={0.5}
             lerpSpeed={0.15}
           /> */}
-          <NewRob />
+          {/* <NewRob /> */}
+          <AnimatedHuman position={[0, 0, 0]} />
           {/* Robot */}
           {/* <RoboModel
             currentSection={currentSection}
